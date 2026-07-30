@@ -1,26 +1,99 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+* {
+  scrollbar-color: #232B3A #0B0E14;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-base text-ink font-body antialiased;
+}
+
+::selection {
+  background-color: #E3A24C;
+  color: #0B0E14;
+}
+
+/* Visible keyboard focus everywhere */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #E3A24C;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Signature system: circuit trace + chip-notch card ---- */
+
+/* A thin gold trace with a via-dot, used above section headings */
+.trace-node {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.trace-node::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #E3A24C;
+  box-shadow: 0 0 0 3px rgba(227, 162, 76, 0.18);
+  flex-shrink: 0;
+}
+
+.trace-rule {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, #E3A24C 0%, rgba(227, 162, 76, 0.08) 60%, transparent 100%);
+}
+
+/* Chip-style card: notched top-left corner like a component package pin-1 mark */
+.chip-card {
+  position: relative;
+  clip-path: polygon(
+    0% 18px,
+    18px 0%,
+    100% 0%,
+    100% 100%,
+    0% 100%
+  );
+  background: #121722;
+  border: 1px solid #232B3A;
+}
+.chip-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  background: #0B0E14;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  border-right: 1px solid #232B3A;
+  border-bottom: 1px solid #232B3A;
+}
+
+.pin-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: #38D6A6;
+  box-shadow: 0 0 6px rgba(56, 214, 166, 0.8);
 }
