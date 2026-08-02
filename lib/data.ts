@@ -1,10 +1,5 @@
 import { Category, Product } from "./types";
 
-/**
- * Top navigation categories.
- * Add a new entry here and it will automatically appear in the Navbar
- * and become routable at /category/[slug].
- */
 export const categories: Category[] = [
   { slug: "desktop", label: "Desktop", subcategories: ["Prebuilt PCs", "Mini PCs", "Workstations"] },
   { slug: "laptop", label: "Laptop", subcategories: ["Gaming Laptops", "Ultrabooks", "Business Laptops"] },
@@ -22,16 +17,13 @@ export const categories: Category[] = [
   { slug: "accessories", label: "Accessories", subcategories: ["Cables", "Mounts", "Peripherals"] },
 ];
 
-/**
- * Placeholder catalogue. Swap `image` for real product photography and
- * extend `specs` per product as your catalogue grows.
- */
 export const products: Product[] = [
   {
     id: "p1",
     slug: "vertex-rtx-gpu",
     name: "Vertex RTX 5080 16GB Graphics Card",
     categorySlug: "component",
+    subcategory: "GPU",
     price: 899.99,
     compareAtPrice: 999.99,
     image: "https://placehold.co/600x600/121722/E3A24C?text=GPU",
@@ -49,6 +41,7 @@ export const products: Product[] = [
     slug: "forge-x9-cpu",
     name: "Forge X9-14900 Desktop Processor",
     categorySlug: "component",
+    subcategory: "CPU",
     price: 549.0,
     image: "https://placehold.co/600x600/121722/E3A24C?text=CPU",
     rating: 4.7,
@@ -63,23 +56,25 @@ export const products: Product[] = [
   {
     id: "p3",
     slug: "nimbus-14-ultrabook",
-    name: "Nimbus 14\" Ultrabook, 32GB RAM",
+    name: 'Nimbus 14" Ultrabook, 32GB RAM',
     categorySlug: "laptop",
+    subcategory: "Ultrabooks",
     price: 1249.0,
     image: "https://placehold.co/600x600/121722/E3A24C?text=Laptop",
     rating: 4.6,
     reviewCount: 88,
     inStock: true,
     specs: [
-      { label: "Display", value: "14\" 2.8K OLED" },
+      { label: "Display", value: '14" 2.8K OLED' },
       { label: "Battery", value: "Up to 18h" },
     ],
   },
   {
     id: "p4",
     slug: "aurora-32-oled-monitor",
-    name: "Aurora 32\" 4K OLED Gaming Monitor",
+    name: 'Aurora 32" 4K OLED Gaming Monitor',
     categorySlug: "monitor",
+    subcategory: "Gaming Monitors",
     price: 799.0,
     image: "https://placehold.co/600x600/121722/E3A24C?text=Monitor",
     rating: 4.9,
@@ -96,6 +91,7 @@ export const products: Product[] = [
     slug: "coreforge-r7-tower",
     name: "CoreForge R7 Prebuilt Gaming Tower",
     categorySlug: "desktop",
+    subcategory: "Prebuilt PCs",
     price: 1899.0,
     image: "https://placehold.co/600x600/121722/E3A24C?text=Desktop",
     rating: 4.8,
@@ -111,6 +107,7 @@ export const products: Product[] = [
     slug: "meshnet-ax6-router",
     name: "MeshNet AX6 Tri-Band Wi-Fi Router",
     categorySlug: "networking",
+    subcategory: "Routers",
     price: 189.99,
     image: "https://placehold.co/600x600/121722/E3A24C?text=Router",
     rating: 4.5,
@@ -127,6 +124,7 @@ export const products: Product[] = [
     slug: "rackline-2u-server",
     name: "RackLine 2U Storage Server, 8-Bay",
     categorySlug: "server",
+    subcategory: "Rack Servers",
     price: 3299.0,
     image: "https://placehold.co/600x600/121722/E3A24C?text=Server",
     rating: 4.7,
@@ -142,6 +140,7 @@ export const products: Product[] = [
     slug: "shieldcam-pro-nvr-kit",
     name: "ShieldCam Pro 4-Camera NVR Kit",
     categorySlug: "security",
+    subcategory: "Security Cameras",
     price: 429.0,
     image: "https://placehold.co/600x600/121722/E3A24C?text=Security",
     rating: 4.4,
@@ -154,18 +153,24 @@ export const products: Product[] = [
   },
 ];
 
-export function getCategory(slug: string): Category | undefined {
+// ============ ASYNC FUNCTIONS FOR FRONTEND ============
+
+export async function getCategories(): Promise<Category[]> {
+  return categories;
+}
+
+export async function getCategory(slug: string): Promise<Category | undefined> {
   return categories.find((c) => c.slug === slug);
 }
 
-export function getProductsByCategory(slug: string): Product[] {
+export async function getProductsByCategory(slug: string): Promise<Product[]> {
   return products.filter((p) => p.categorySlug === slug);
 }
 
-export function getProduct(slug: string): Product | undefined {
+export async function getProduct(slug: string): Promise<Product | undefined> {
   return products.find((p) => p.slug === slug);
 }
 
-export function getFeaturedProducts(limit = 8): Product[] {
+export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
   return products.slice(0, limit);
 }

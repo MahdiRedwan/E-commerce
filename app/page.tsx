@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Hero from "@/components/Hero";
 import SectionHeader from "@/components/SectionHeader";
 import ProductGrid from "@/components/ProductGrid";
@@ -8,7 +11,11 @@ import Newsletter from "@/components/Newsletter";
 import { getFeaturedProducts } from "@/lib/data";
 
 export default function Home() {
-  const featured = getFeaturedProducts(8);
+  const [featured, setFeatured] = useState([]);
+
+  useEffect(() => {
+    getFeaturedProducts(8).then(setFeatured).catch(console.error);
+  }, []);
 
   return (
     <>

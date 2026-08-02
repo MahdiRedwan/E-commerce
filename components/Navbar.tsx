@@ -1,12 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { categories } from "@/lib/data";
+import { useState, useEffect } from "react";
 import CategoryMegaMenu from "./CategoryMegaMenu";
+import { getTotalItems, getTotalPrice, subscribe } from "@/lib/cart";
+import { getStoredUser, clearStoredUser } from "@/lib/auth";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [user, setUser] = useState<any>(null);
+
+  const refreshCart = () => {
+    setTotalItems(getTotalItems());
+    setTotalPrice(getTotalPrice());
+  };
+
+  useEffect(() => {
+    refreshCart();
+    const unsubscribe = subscribe(refreshCart);
+    
+    // Check if user is logged in
+    const storedUser = getStoredUser();
+    if (storedUser) {
+      setUser(storedUser);
+    }
+    
+    return unsubscribe;
+  }, []);
+
+  const handleLogout = () => {
+    clearStoredUser();
+    setUser(null);
+    window.location.href = "/";
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-base">
@@ -44,7 +72,20 @@ export default function Navbar() {
           Circuit<span className="text-trace">Forge</span>
         </Link>
 
-        <form className="hidden flex-1 items-center md:flex" role="search">
+        {/* Search Form */}
+        <form 
+          className="hidden flex-1 items-center md:flex" 
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            const input = form.querySelector('input') as HTMLInputElement;
+            const query = input.value.trim();
+            if (query) {
+              window.location.href = `/search?q=${encodeURIComponent(query)}`;
+            }
+          }}
+        >
           <input
             type="search"
             placeholder="Search by part number, brand, or keyword…"
@@ -60,13 +101,36 @@ export default function Navbar() {
         </form>
 
         <div className="ml-auto flex items-center gap-5 text-ink">
-          <Link href="/account" className="hidden text-sm sm:flex sm:flex-col sm:leading-tight">
-            <span className="text-muted text-xs">Account</span>
-            <span className="font-medium">Sign in</span>
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-3 text-sm">
+              <Link href="/account" className="text-muted hover:text-trace">Welcome,</Link>
+              <Link href="/account" className="font-medium hover:text-trace">{user.name}</Link>
+              {user.role === 'admin' && (
+                <Link href="/admin" className="text-xs text-trace hover:underline">
+                  Admin
+                </Link>
+              )}
+              <button
+                onClick={handleLogout}
+                className="text-xs text-muted hover:text-red-500"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <Link href="/login" className="hidden text-sm sm:flex sm:flex-col sm:leading-tight">
+              <span className="text-muted text-xs">Account</span>
+              <span className="font-medium">Sign in</span>
+            </Link>
+          )}
           <Link href="/cart" className="relative flex items-center gap-2">
             <span aria-hidden>🛒</span>
-            <span className="hidden text-sm font-mono sm:inline">৳0</span>
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-trace text-xs text-base">
+                {totalItems}
+              </span>
+            )}
+            <span className="hidden text-sm font-mono sm:inline">৳{totalPrice}</span>
             <span className="sr-only">Cart</span>
           </Link>
         </div>
@@ -78,17 +142,20 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="border-t border-line bg-surface px-6 py-4 lg:hidden">
           <ul className="grid grid-cols-2 gap-2">
-            {categories.map((cat) => (
-              <li key={cat.slug}>
-                <Link
-                  href={`/category/${cat.slug}`}
-                  className="block px-3 py-2 text-sm text-ink/80 hover:text-trace"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {cat.label}
-                </Link>
-              </li>
-            ))}
+            {(() => {
+              const { categories } = require('@/lib/data');
+              return categories.map((cat: any) => (
+                <li key={cat.slug}>
+                  <Link
+                    href={`/category/${cat.slug}`}
+                    className="block px-3 py-2 text-sm text-ink/80 hover:text-trace"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {cat.label}
+                  </Link>
+                </li>
+              ));
+            })()}
           </ul>
         </div>
       )}

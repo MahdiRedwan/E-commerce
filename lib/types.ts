@@ -11,6 +11,7 @@ export interface Product {
   slug: string;
   name: string;
   categorySlug: string;
+  subcategory?: string;  // ← ADDED for filtering
   price: number;
   compareAtPrice?: number;
   currency?: string;

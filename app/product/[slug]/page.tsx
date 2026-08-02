@@ -1,27 +1,48 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { products, getProduct } from "@/lib/data";
-import { formatPrice } from "@/lib/format";
+import { getProduct } from "@/lib/data";
+import { addToCart } from "@/lib/cart";
+import { Product } from "@/lib/types";
 
 interface Props {
   params: { slug: string };
 }
 
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }));
-}
-
-export function generateMetadata({ params }: Props) {
-  const product = getProduct(params.slug);
-  return {
-    title: product ? `${product.name} — CircuitForge` : "Product — CircuitForge",
-  };
-}
-
 export default function ProductPage({ params }: Props) {
-  const product = getProduct(params.slug);
-  if (!product) notFound();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    getProduct(params.slug).then((data) => {
+      if (data) {
+        setProduct(data);
+      }
+      setLoading(false);
+    });
+  }, [params.slug]);
+
+  const handleAddToCart = () => {
+    if (product) {
+      addToCart(product.id, quantity);
+      alert(`Added ${quantity} x ${product.name} to cart!`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-6 py-12">
+        <p className="text-muted">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    notFound();
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12">
@@ -35,58 +56,82 @@ export default function ProductPage({ params }: Props) {
         <span className="text-ink">{product.name}</span>
       </nav>
 
-      <div className="grid gap-10 md:grid-cols-2">
-        <div className="chip-card relative aspect-square overflow-hidden">
-          <Image src={product.image} alt={product.name} fill className="object-cover" />
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+        <div className="relative aspect-square border border-line bg-surface">
+          <img
+            src={product.image}
+            alt={product.name}
+            className="h-full w-full object-contain p-4"
+          />
         </div>
 
         <div>
           <h1 className="font-display text-3xl font-bold text-ink">{product.name}</h1>
+          
+          {product.badge && (
+            <span className="inline-block bg-trace px-3 py-1 text-xs font-semibold text-base uppercase tracking-wider mt-2">
+              {product.badge}
+            </span>
+          )}
+
+          <div className="mt-4 flex items-center gap-4">
+            <span className="text-2xl font-bold text-ink">?{product.price}</span>
+            {product.compareAtPrice && (
+              <span className="text-muted line-through">?{product.compareAtPrice}</span>
+            )}
+          </div>
 
           {product.rating && (
             <div className="mt-2 flex items-center gap-2 text-sm text-muted">
-              <span className="text-trace">★ {product.rating.toFixed(1)}</span>
+              <span>? {product.rating}</span>
               <span>({product.reviewCount} reviews)</span>
             </div>
           )}
 
-          <div className="mt-6 flex items-baseline gap-3 font-mono">
-            <span className="text-3xl font-semibold text-ink">
-              {formatPrice(product.price)}
+          <div className="mt-4">
+            <span className={product.inStock ? "text-green-500" : "text-red-500"}>
+              {product.inStock ? "? In Stock" : "? Out of Stock"}
             </span>
-            {product.compareAtPrice && (
-              <span className="text-base text-muted line-through">
-                {formatPrice(product.compareAtPrice)}
-              </span>
-            )}
           </div>
 
-          <p className="mt-2 font-mono text-xs uppercase tracking-wide text-circuit">
-            {product.inStock ? "In stock — ships today" : "Currently out of stock"}
-          </p>
-
-          <button
-            disabled={!product.inStock}
-            className="mt-6 w-full border border-trace bg-trace py-3 text-sm font-semibold text-base hover:opacity-90 disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-muted sm:w-auto sm:px-10"
-          >
-            Add to Cart
-          </button>
-
-          {product.specs && (
-            <div className="mt-10 border-t border-line pt-6">
-              <h2 className="font-mono text-xs uppercase tracking-wide text-ink">
-                Specification
-              </h2>
-              <dl className="mt-4 divide-y divide-line font-mono text-sm">
-                {product.specs.map((spec) => (
-                  <div key={spec.label} className="flex justify-between py-2">
-                    <dt className="text-muted">{spec.label}</dt>
-                    <dd className="text-ink">{spec.value}</dd>
+          {product.specs && product.specs.length > 0 && (
+            <div className="mt-6 border border-line bg-surface p-4">
+              <h2 className="font-mono text-xs uppercase tracking-wider text-muted">Specifications</h2>
+              <dl className="mt-2 grid grid-cols-2 gap-2">
+                {product.specs.map((spec, i) => (
+                  <div key={i} className="col-span-2 flex border-b border-line py-2 text-sm">
+                    <dt className="text-muted w-1/2">{spec.label}</dt>
+                    <dd className="text-ink w-1/2 font-medium">{spec.value}</dd>
                   </div>
                 ))}
               </dl>
             </div>
           )}
+
+          <div className="mt-6 flex items-center gap-4">
+            <div className="flex items-center border border-line">
+              <button
+                className="px-3 py-2 text-ink hover:bg-surface"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              >
+                -
+              </button>
+              <span className="w-10 text-center text-ink">{quantity}</span>
+              <button
+                className="px-3 py-2 text-ink hover:bg-surface"
+                onClick={() => setQuantity(quantity + 1)}
+              >
+                +
+              </button>
+            </div>
+            <button
+              className="flex-1 bg-trace px-6 py-3 text-base font-semibold hover:opacity-80 disabled:opacity-50"
+              onClick={handleAddToCart}
+              disabled={!product.inStock}
+            >
+              Add to Cart
+            </button>
+          </div>
         </div>
       </div>
     </div>

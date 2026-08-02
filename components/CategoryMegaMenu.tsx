@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { categories } from "@/lib/data";
+import { useState, useEffect } from "react";
+import { getCategories } from '@/lib/data';
 
 export default function CategoryMegaMenu() {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    getCategories().then(setCategories).catch(console.error);
+  }, []);
 
   return (
     <nav
