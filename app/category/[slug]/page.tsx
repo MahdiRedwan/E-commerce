@@ -13,6 +13,7 @@ export function generateStaticParams() {
   return categories.map((c) => ({ slug: c.slug }));
 }
 
+// Fix: Don't use async here, getCategory is sync
 export function generateMetadata({ params }: Props) {
   const category = getCategory(params.slug);
   return {
