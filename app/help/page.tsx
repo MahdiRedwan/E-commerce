@@ -213,7 +213,7 @@ export default function HelpPage() {
           {/* Contact Form */}
           <div className="mt-8 border border-line bg-surface p-6">
             <h3 className="font-display text-xl font-bold text-ink">Contact Support</h3>
-            <p className="text-sm text-muted mt-1">Can't find what you're looking for? Send us a message.</p>
+            <p className="text-sm text-muted mt-1">Can&apos;t find what you&apos;re looking for? Send us a message.</p>
 
             <form onSubmit={handleSubmit} className="mt-4 space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -117,7 +117,7 @@ export default function AccountPage() {
             <h3 className="font-display text-xl font-bold text-ink">Order History</h3>
 
             {orders.length === 0 ? (
-              <p className="mt-4 text-muted">You haven't placed any orders yet.</p>
+              <p className="mt-4 text-muted">You haven&apos;t placed any orders yet.</p>
             ) : (
               <div className="mt-4 space-y-4">
                 {orders.map((order) => (

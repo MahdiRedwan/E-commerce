@@ -41,7 +41,7 @@ export default function SearchPage() {
         <p className="text-muted mt-8">Searching...</p>
       ) : products.length === 0 ? (
         <div className="mt-8 text-center">
-          <p className="text-muted">No products found for "{query}"</p>
+          <p className="text-muted">No products found for &quot;{query}&quot;</p>
           <Link
             href="/"
             className="mt-4 inline-block bg-trace px-6 py-2 text-base font-semibold hover:opacity-80"

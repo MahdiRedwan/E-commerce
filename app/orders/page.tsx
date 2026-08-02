@@ -52,7 +52,7 @@ export default function OrdersPage() {
     return (
       <div className="mx-auto max-w-7xl px-6 py-16 text-center">
         <h1 className="font-display text-3xl font-bold text-ink">My Orders</h1>
-        <p className="mt-4 text-muted">You haven't placed any orders yet.</p>
+        <p className="mt-4 text-muted">You haven&apos;t placed any orders yet.</p>
         <Link
           href="/"
           className="mt-6 inline-block bg-trace px-6 py-3 text-base font-semibold hover:opacity-80"
