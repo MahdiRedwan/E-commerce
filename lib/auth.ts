@@ -1,58 +1,65 @@
-export interface User {
-  id: string
-  email: string
-  name: string
-  role: string
-  createdAt: string
+"use client";
+
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { getStoredUser, setStoredUser, clearStoredUser } from "@/lib/auth";
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  createdAt: string;
 }
 
-// Save token to localStorage
-export function setToken(token: string) {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('auth_token', token)
-  }
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (user: User, token: string) => void;
+  logout: () => void;
+  refreshUser: () => void;
 }
 
-// Get token from localStorage
-export function getToken(): string | null {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('auth_token')
-  }
-  return null
-}
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Remove token (logout)
-export function removeToken() {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('auth_token')
-  }
-}
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-// Get user from localStorage
-export function getStoredUser(): User | null {
-  if (typeof window !== 'undefined') {
-    const user = localStorage.getItem('auth_user')
-    if (user) {
-      try {
-        return JSON.parse(user)
-      } catch {
-        return null
-      }
+  const refreshUser = () => {
+    const storedUser = getStoredUser();
+    if (storedUser) {
+      setUser(storedUser);
+    } else {
+      setUser(null);
     }
-  }
-  return null
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    refreshUser();
+  }, []);
+
+  const login = (userData: User, token: string) => {
+    setStoredUser(userData);
+    setUser(userData);
+  };
+
+  const logout = () => {
+    clearStoredUser();
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-// Save user to localStorage
-export function setStoredUser(user: User) {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('auth_user', JSON.stringify(user))
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-}
-
-// Clear user from localStorage
-export function clearStoredUser() {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('auth_user')
-  }
+  return context;
 }
