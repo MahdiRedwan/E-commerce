@@ -1,65 +1,52 @@
-"use client";
-
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { getStoredUser, setStoredUser, clearStoredUser } from "@/lib/auth";
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  createdAt: string;
+export interface User {
+  id: string
+  email: string
+  name: string
+  role: string
+  createdAt: string
 }
 
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  login: (user: User, token: string) => void;
-  logout: () => void;
-  refreshUser: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const refreshUser = () => {
-    const storedUser = getStoredUser();
-    if (storedUser) {
-      setUser(storedUser);
-    } else {
-      setUser(null);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    refreshUser();
-  }, []);
-
-  const login = (userData: User, token: string) => {
-    setStoredUser(userData);
-    setUser(userData);
-  };
-
-  const logout = () => {
-    clearStoredUser();
-    setUser(null);
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+export function setToken(token: string) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('auth_token', token)
   }
-  return context;
+}
+
+export function getToken(): string | null {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('auth_token')
+  }
+  return null
+}
+
+export function removeToken() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('auth_token')
+  }
+}
+
+export function getStoredUser(): User | null {
+  if (typeof window !== 'undefined') {
+    const user = localStorage.getItem('auth_user')
+    if (user) {
+      try {
+        return JSON.parse(user)
+      } catch {
+        return null
+      }
+    }
+  }
+  return null
+}
+
+export function setStoredUser(user: User) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('auth_user', JSON.stringify(user))
+  }
+}
+
+export function clearStoredUser() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('auth_user')
+  }
 }
