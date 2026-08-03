@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fallback-url.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'fallback-key'
+// Hardcoded for deployment
+const supabaseUrl = 'https://xmvzvtvqqizznofxhzlp.supabase.co'
+const supabaseAnonKey = 'sb_publishable_pXg2SUpdqmTpZzIH-68uZw_-1l-B4OC'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
