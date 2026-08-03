@@ -1,20 +1,5 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
-
-const ordersFilePath = path.join(process.cwd(), 'orders.json')
-
-function loadOrders(): any[] {
-  try {
-    if (fs.existsSync(ordersFilePath)) {
-      const data = fs.readFileSync(ordersFilePath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error loading orders:', error)
-  }
-  return []
-}
+import { supabase } from '@/lib/supabase'
 
 // GET /api/track-order?id=1&email=test@test.com
 export async function GET(request: Request) {
@@ -30,10 +15,14 @@ export async function GET(request: Request) {
       )
     }
     
-    const orders = loadOrders()
-    const order = orders.find(o => o.id === orderId)
+    // Get the order from Supabase
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single()
     
-    if (!order) {
+    if (orderError || !order) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
@@ -41,38 +30,41 @@ export async function GET(request: Request) {
     }
     
     // Get the user for this order
-    const usersFilePath = path.join(process.cwd(), 'users.json')
-    let users: any[] = []
-    try {
-      if (fs.existsSync(usersFilePath)) {
-        const data = fs.readFileSync(usersFilePath, 'utf-8')
-        users = JSON.parse(data)
-      }
-    } catch (error) {}
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, email, name')
+      .eq('id', order.user_id)
+      .single()
     
-    const user = users.find((u: any) => u.id === order.userId)
-    
-    // Check if email matches
-    if (!user || user.email !== email) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Order not found for this email' },
         { status: 404 }
       )
     }
     
-    // Return order without sensitive info
+    // Check if email matches
+    if (user.email !== email) {
+      return NextResponse.json(
+        { error: 'Order not found for this email' },
+        { status: 404 }
+      )
+    }
+    
+    // Return order details
     return NextResponse.json({
       id: order.id,
       status: order.status,
       total: order.total,
       items: order.items,
-      shippingAddress: order.shippingAddress,
-      paymentMethod: order.paymentMethod,
-      createdAt: order.createdAt,
+      shippingAddress: order.shipping_address,
+      paymentMethod: order.payment_method,
+      createdAt: order.created_at,
       userEmail: user.email,
       userName: user.name
     })
   } catch (error) {
+    console.error('Track order error:', error)
     return NextResponse.json(
       { error: 'Failed to track order' },
       { status: 500 }

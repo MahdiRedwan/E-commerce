@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+import { supabase } from '@/lib/supabase'
 
 export interface Order {
   id: string
@@ -24,43 +23,34 @@ export interface Order {
   createdAt: string
 }
 
-const ordersFilePath = path.join(process.cwd(), 'orders.json')
-
-function loadOrders(): Order[] {
-  try {
-    if (fs.existsSync(ordersFilePath)) {
-      const data = fs.readFileSync(ordersFilePath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error loading orders:', error)
-  }
-  return []
-}
-
-function saveOrders(orders: Order[]) {
-  try {
-    fs.writeFileSync(ordersFilePath, JSON.stringify(orders, null, 2))
-  } catch (error) {
-    console.error('Error saving orders:', error)
-  }
-}
-
 // GET /api/orders - Get all orders (admin) or user's orders
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const userId = url.searchParams.get('userId')
     
-    const orders = loadOrders()
+    let query = supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false })
     
     if (userId) {
-      const userOrders = orders.filter(order => order.userId === userId)
-      return NextResponse.json(userOrders)
+      query = query.eq('user_id', userId)
     }
     
-    return NextResponse.json(orders)
+    const { data, error } = await query
+    
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch orders' },
+        { status: 500 }
+      )
+    }
+    
+    return NextResponse.json(data || [])
   } catch (error) {
+    console.error('Orders API error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch orders' },
       { status: 500 }
@@ -73,7 +63,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     
-    // Validate required fields
     if (!body.userId || !body.items || !body.total) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -81,24 +70,48 @@ export async function POST(request: Request) {
       )
     }
     
-    const orders = loadOrders()
+    // Verify user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', body.userId)
+      .single()
     
-    const newOrder: Order = {
-      id: String(orders.length + 1),
-      userId: body.userId,
-      items: body.items,
-      total: body.total,
-      shippingAddress: body.shippingAddress,
-      paymentMethod: body.paymentMethod,
-      status: 'pending',
-      createdAt: new Date().toISOString()
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
     }
     
-    orders.push(newOrder)
-    saveOrders(orders)
+    const newOrder = {
+      id: `ORD-${Date.now()}`,
+      user_id: body.userId,
+      items: body.items,
+      total: body.total,
+      shipping_address: body.shippingAddress,
+      payment_method: body.paymentMethod,
+      status: 'pending',
+      created_at: new Date().toISOString()
+    }
     
-    return NextResponse.json(newOrder, { status: 201 })
+    const { data, error } = await supabase
+      .from('orders')
+      .insert(newOrder)
+      .select()
+      .single()
+    
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to create order' },
+        { status: 500 }
+      )
+    }
+    
+    return NextResponse.json(data, { status: 201 })
   } catch (error) {
+    console.error('Orders API error:', error)
     return NextResponse.json(
       { error: 'Failed to create order' },
       { status: 500 }

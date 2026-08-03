@@ -1,27 +1,10 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+import { supabase } from '@/lib/supabase'
+import jwt from 'jsonwebtoken'
 
-const contactsFilePath = path.join(process.cwd(), 'contacts.json')
-
-function loadContacts(): any[] {
-  try {
-    if (fs.existsSync(contactsFilePath)) {
-      const data = fs.readFileSync(contactsFilePath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error loading contacts:', error)
-  }
-  return []
-}
-
-function saveContacts(contacts: any[]) {
-  try {
-    fs.writeFileSync(contactsFilePath, JSON.stringify(contacts, null, 2))
-  } catch (error) {
-    console.error('Error saving contacts:', error)
-  }
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined')
 }
 
 // GET /api/help - Get all contact messages (admin only)
@@ -34,10 +17,34 @@ export async function GET(request: Request) {
         { status: 401 }
       )
     }
+
+    const token = authHeader.split(' ')[1]
+    const decoded = jwt.verify(token, JWT_SECRET) as any
     
-    const contacts = loadContacts()
-    return NextResponse.json(contacts)
+    // Check if user is admin
+    if (decoded.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch messages' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(data || [])
   } catch (error) {
+    console.error('Help API error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch messages' },
       { status: 500 }
@@ -56,8 +63,15 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    
-    const contacts = loadContacts()
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email address' },
+        { status: 400 }
+      )
+    }
     
     const newContact = {
       id: String(Date.now()),
@@ -66,12 +80,23 @@ export async function POST(request: Request) {
       subject,
       message,
       status: 'pending',
-      createdAt: new Date().toISOString()
+      created_at: new Date().toISOString()
     }
-    
-    contacts.push(newContact)
-    saveContacts(contacts)
-    
+
+    const { data, error } = await supabase
+      .from('contacts')
+      .insert(newContact)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to send message' },
+        { status: 500 }
+      )
+    }
+
     // In production, send an email notification here
     
     return NextResponse.json({
@@ -79,6 +104,7 @@ export async function POST(request: Request) {
       message: 'Your message has been sent! We will respond within 24 hours.'
     }, { status: 201 })
   } catch (error) {
+    console.error('Help API error:', error)
     return NextResponse.json(
       { error: 'Failed to send message' },
       { status: 500 }

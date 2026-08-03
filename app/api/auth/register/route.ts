@@ -13,6 +13,15 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
     if (password.length < 6) {
       return NextResponse.json(
         { error: 'Password must be at least 6 characters' },
@@ -22,7 +31,6 @@ export async function POST(request: Request) {
 
     const user = await createUser(email, password, name)
     
-    // Return user without password
     const { password: _, ...userWithoutPassword } = user
     return NextResponse.json(userWithoutPassword, { status: 201 })
   } catch (error: any) {

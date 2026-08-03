@@ -1,27 +1,10 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+import { supabase } from '@/lib/supabase'
+import jwt from 'jsonwebtoken'
 
-const businessFilePath = path.join(process.cwd(), 'business.json')
-
-function loadBusiness(): any[] {
-  try {
-    if (fs.existsSync(businessFilePath)) {
-      const data = fs.readFileSync(businessFilePath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error loading business:', error)
-  }
-  return []
-}
-
-function saveBusiness(business: any[]) {
-  try {
-    fs.writeFileSync(businessFilePath, JSON.stringify(business, null, 2))
-  } catch (error) {
-    console.error('Error saving business:', error)
-  }
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined')
 }
 
 // GET /api/business?userId=1 - Get business account by user ID
@@ -36,16 +19,28 @@ export async function GET(request: Request) {
         { status: 400 }
       )
     }
-    
-    const businesses = loadBusiness()
-    const business = businesses.find((b: any) => b.userId === userId)
-    
-    if (!business) {
-      return NextResponse.json(null, { status: 404 })
+
+    const { data, error } = await supabase
+      .from('business_accounts')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (error) {
+      // Return null if not found (404)
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(null, { status: 404 })
+      }
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch business' },
+        { status: 500 }
+      )
     }
-    
-    return NextResponse.json(business)
+
+    return NextResponse.json(data)
   } catch (error) {
+    console.error('Business API error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch business' },
       { status: 500 }
@@ -64,39 +59,53 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    
-    const businesses = loadBusiness()
-    
+
     // Check if user already has a business account
-    const existing = businesses.find((b: any) => b.userId === body.userId)
+    const { data: existing, error: checkError } = await supabase
+      .from('business_accounts')
+      .select('id')
+      .eq('user_id', body.userId)
+      .single()
+
     if (existing) {
       return NextResponse.json(
         { error: 'User already has a business account' },
         { status: 400 }
       )
     }
-    
+
     const newBusiness = {
       id: String(Date.now()),
-      userId: body.userId,
-      companyName: body.companyName,
-      taxId: body.taxId || '',
-      vatNumber: body.vatNumber || '',
-      address: body.address || '',
-      phone: body.phone || '',
-      website: body.website || '',
-      businessType: body.businessType || 'retail',
-      estimatedMonthlyOrder: body.estimatedMonthlyOrder || '0-1000',
+      user_id: body.userId,
+      company_name: body.companyName,
+      tax_id: body.taxId || null,
+      vat_number: body.vatNumber || null,
+      address: body.address || null,
+      phone: body.phone || null,
+      website: body.website || null,
+      business_type: body.businessType || 'retail',
+      estimated_monthly_order: body.estimatedMonthlyOrder || '0-1000',
       status: 'active',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      created_at: new Date().toISOString()
     }
-    
-    businesses.push(newBusiness)
-    saveBusiness(businesses)
-    
-    return NextResponse.json(newBusiness, { status: 201 })
+
+    const { data, error } = await supabase
+      .from('business_accounts')
+      .insert(newBusiness)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to create business account' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(data, { status: 201 })
   } catch (error) {
+    console.error('Business API error:', error)
     return NextResponse.json(
       { error: 'Failed to create business account' },
       { status: 500 }

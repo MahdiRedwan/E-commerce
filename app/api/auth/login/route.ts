@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server'
 import { validateUser, findUserById } from '@/lib/users'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this'
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined')
+}
 
 export async function POST(request: Request) {
   try {
@@ -24,14 +27,12 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: '7d' }
     )
 
-    // Return user without password
     const { password: _, ...userWithoutPassword } = user
 
     return NextResponse.json({

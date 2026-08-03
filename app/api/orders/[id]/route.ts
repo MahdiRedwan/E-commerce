@@ -1,28 +1,7 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+import { supabase } from '@/lib/supabase'
 
-const ordersFilePath = path.join(process.cwd(), 'orders.json')
-
-function loadOrders(): any[] {
-  try {
-    if (fs.existsSync(ordersFilePath)) {
-      const data = fs.readFileSync(ordersFilePath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error loading orders:', error)
-  }
-  return []
-}
-
-function saveOrders(orders: any[]) {
-  try {
-    fs.writeFileSync(ordersFilePath, JSON.stringify(orders, null, 2))
-  } catch (error) {
-    console.error('Error saving orders:', error)
-  }
-}
+const ALLOWED_STATUSES = ['pending', 'processing', 'shipped', 'delivered']
 
 // GET /api/orders/:id - Get a specific order
 export async function GET(
@@ -30,18 +9,22 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const orders = loadOrders()
-    const order = orders.find(o => o.id === params.id)
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', params.id)
+      .single()
     
-    if (!order) {
+    if (error || !data) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       )
     }
     
-    return NextResponse.json(order)
+    return NextResponse.json(data)
   } catch (error) {
+    console.error('Order API error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch order' },
       { status: 500 }
@@ -65,21 +48,45 @@ export async function PUT(
       )
     }
     
-    const orders = loadOrders()
-    const orderIndex = orders.findIndex(o => o.id === params.id)
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return NextResponse.json(
+        { error: `Status must be one of: ${ALLOWED_STATUSES.join(', ')}` },
+        { status: 400 }
+      )
+    }
     
-    if (orderIndex === -1) {
+    // First check if order exists
+    const { data: existing, error: checkError } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('id', params.id)
+      .single()
+    
+    if (checkError || !existing) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       )
     }
     
-    orders[orderIndex].status = status
-    saveOrders(orders)
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ status })
+      .eq('id', params.id)
+      .select()
+      .single()
     
-    return NextResponse.json(orders[orderIndex])
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to update order' },
+        { status: 500 }
+      )
+    }
+    
+    return NextResponse.json(data)
   } catch (error) {
+    console.error('Order API error:', error)
     return NextResponse.json(
       { error: 'Failed to update order' },
       { status: 500 }

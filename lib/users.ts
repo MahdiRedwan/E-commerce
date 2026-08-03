@@ -1,6 +1,5 @@
+import { supabase } from './supabase'
 import bcrypt from 'bcryptjs'
-import fs from 'fs'
-import path from 'path'
 
 export interface User {
   id: string
@@ -11,109 +10,92 @@ export interface User {
   createdAt: string
 }
 
-const usersFilePath = path.join(process.cwd(), 'users.json')
+export async function findUserByEmail(email: string): Promise<User | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single()
 
-// Load users from file
-function loadUsers(): User[] {
-  try {
-    if (fs.existsSync(usersFilePath)) {
-      const data = fs.readFileSync(usersFilePath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error loading users:', error)
+  if (error || !data) {
+    return null
   }
-  return []
+
+  return data as User
 }
 
-// Save users to file
-function saveUsers(users: User[]) {
-  try {
-    fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2))
-  } catch (error) {
-    console.error('Error saving users:', error)
+export async function findUserById(id: string): Promise<User | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error || !data) {
+    return null
   }
-}
 
-// Get users (load fresh each time)
-function getUsers(): User[] {
-  return loadUsers()
-}
-
-// Seed initial users if none exist
-function seedUsers() {
-  const users = loadUsers()
-  if (users.length === 0) {
-    const hashedPassword = bcrypt.hashSync('admin123', 10)
-    const hashedCustomer = bcrypt.hashSync('customer123', 10)
-    
-    const seedData: User[] = [
-      {
-        id: '1',
-        email: 'admin@circuitforge.com',
-        password: hashedPassword,
-        name: 'Admin',
-        role: 'admin',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        email: 'customer@circuitforge.com',
-        password: hashedCustomer,
-        name: 'Customer',
-        role: 'customer',
-        createdAt: new Date().toISOString()
-      }
-    ]
-    saveUsers(seedData)
-  }
-}
-
-// Initialize seed
-seedUsers()
-
-export function findUserByEmail(email: string): User | undefined {
-  const users = getUsers()
-  return users.find(u => u.email === email)
-}
-
-export function findUserById(id: string): User | undefined {
-  const users = getUsers()
-  return users.find(u => u.id === id)
+  return data as User
 }
 
 export async function createUser(email: string, password: string, name: string): Promise<User> {
-  const users = getUsers()
-  const existing = users.find(u => u.email === email)
+  const existing = await findUserByEmail(email)
   if (existing) {
     throw new Error('User already exists')
   }
-  
+
   const hashedPassword = await bcrypt.hash(password, 10)
+
+  // Get the count of users for ID generation
+  const { count, error: countError } = await supabase
+    .from('users')
+    .select('*', { count: 'exact', head: true })
+
+  if (countError) {
+    throw new Error('Failed to create user')
+  }
+
   const newUser: User = {
-    id: String(users.length + 1),
+    id: String((count || 0) + 1),
     email,
     password: hashedPassword,
     name,
     role: 'customer',
     createdAt: new Date().toISOString()
   }
-  users.push(newUser)
-  saveUsers(users)
-  return newUser
+
+  const { data, error } = await supabase
+    .from('users')
+    .insert(newUser)
+    .select()
+    .single()
+
+  if (error) {
+    throw new Error('Failed to create user')
+  }
+
+  return data as User
 }
 
 export async function validateUser(email: string, password: string): Promise<User | null> {
-  const user = findUserByEmail(email)
+  const user = await findUserByEmail(email)
   if (!user) return null
-  
+
   const isValid = await bcrypt.compare(password, user.password)
   if (!isValid) return null
-  
+
   return user
 }
 
-export function getAllUsers(): User[] {
-  const users = getUsers()
-  return users.map(u => ({ ...u, password: 'hidden' } as User))
+export async function getAllUsers(): Promise<User[]> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, email, name, role, created_at')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    return []
+  }
+
+  return data.map((u: any) => ({ ...u, password: 'hidden' })) as User[]
 }

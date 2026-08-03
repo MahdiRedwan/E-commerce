@@ -1,53 +1,25 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
-
-const categoriesFilePath = path.join(process.cwd(), 'categories.json')
-
-function loadCategories(): any[] {
-  try {
-    if (fs.existsSync(categoriesFilePath)) {
-      const data = fs.readFileSync(categoriesFilePath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error loading categories:', error)
-  }
-  // Seed default categories if file doesn't exist
-  const defaultCategories = [
-    { slug: "desktop", label: "Desktop", subcategories: ["Prebuilt PCs", "Mini PCs", "Workstations"] },
-    { slug: "laptop", label: "Laptop", subcategories: ["Gaming Laptops", "Ultrabooks", "Business Laptops"] },
-    { slug: "component", label: "Component", subcategories: ["CPU", "GPU", "Motherboard", "RAM", "Storage", "PSU", "Case", "Cooling"] },
-    { slug: "monitor", label: "Monitor", subcategories: ["Gaming Monitors", "4K Monitors", "Ultrawide"] },
-    { slug: "power", label: "Power", subcategories: ["Power Supplies", "UPS", "Surge Protection"] },
-    { slug: "phone", label: "Phone", subcategories: ["Smartphones", "Accessories"] },
-    { slug: "tablet", label: "Tablet", subcategories: ["Tablets", "Styluses", "Keyboards"] },
-    { slug: "office-equipment", label: "Office Equipment", subcategories: ["Printers", "Scanners", "Shredders"] },
-    { slug: "camera", label: "Camera", subcategories: ["Webcams", "Security Cameras", "Action Cameras"] },
-    { slug: "security", label: "Security", subcategories: ["Antivirus", "NVR/DVR", "Access Control"] },
-    { slug: "networking", label: "Networking", subcategories: ["Routers", "Switches", "Wi-Fi Systems"] },
-    { slug: "software", label: "Software", subcategories: ["Operating Systems", "Productivity", "Security"] },
-    { slug: "server", label: "Server", subcategories: ["Rack Servers", "Tower Servers", "Storage Servers"] },
-    { slug: "accessories", label: "Accessories", subcategories: ["Cables", "Mounts", "Peripherals"] },
-  ]
-  saveCategories(defaultCategories)
-  return defaultCategories
-}
-
-function saveCategories(categories: any[]) {
-  try {
-    fs.writeFileSync(categoriesFilePath, JSON.stringify(categories, null, 2))
-  } catch (error) {
-    console.error('Error saving categories:', error)
-  }
-}
+import { supabase } from '@/lib/supabase'
 
 // GET /api/categories - Get all categories
 export async function GET() {
   try {
-    const categories = loadCategories()
-    return NextResponse.json(categories)
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('label')
+    
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch categories' },
+        { status: 500 }
+      )
+    }
+    
+    return NextResponse.json(data || [])
   } catch (error) {
+    console.error('Categories API error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch categories' },
       { status: 500 }
@@ -67,8 +39,12 @@ export async function POST(request: Request) {
       )
     }
     
-    const categories = loadCategories()
-    const existing = categories.find(c => c.slug === body.slug)
+    // Check if category already exists
+    const { data: existing, error: checkError } = await supabase
+      .from('categories')
+      .select('slug')
+      .eq('slug', body.slug)
+      .single()
     
     if (existing) {
       return NextResponse.json(
@@ -80,14 +56,27 @@ export async function POST(request: Request) {
     const newCategory = {
       slug: body.slug,
       label: body.label,
-      subcategories: body.subcategories || []
+      subcategories: body.subcategories || [],
+      description: body.description || null
     }
     
-    categories.push(newCategory)
-    saveCategories(categories)
+    const { data, error } = await supabase
+      .from('categories')
+      .insert(newCategory)
+      .select()
+      .single()
     
-    return NextResponse.json(newCategory, { status: 201 })
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to create category' },
+        { status: 500 }
+      )
+    }
+    
+    return NextResponse.json(data, { status: 201 })
   } catch (error) {
+    console.error('Categories API error:', error)
     return NextResponse.json(
       { error: 'Failed to create category' },
       { status: 500 }

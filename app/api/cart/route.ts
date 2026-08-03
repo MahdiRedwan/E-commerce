@@ -1,103 +1,69 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+import { supabase } from '@/lib/supabase'
 
-const productsFilePath = path.join(process.cwd(), 'products.json')
-
-function loadProducts(): any[] {
-  try {
-    if (fs.existsSync(productsFilePath)) {
-      const data = fs.readFileSync(productsFilePath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error loading products:', error)
-  }
-  return []
-}
-
-// Get cart from localStorage (client-side only)
-// Server-side cart is stored in memory (will reset on server restart)
-let cart: any[] = []
-
+// GET /api/cart - Get cart from localStorage (handled client-side)
+// This endpoint is just for server-side validation if needed
 export async function GET() {
   return NextResponse.json({
-    items: cart,
-    totalItems: cart.reduce((sum, item) => sum + item.quantity, 0),
-    totalPrice: cart.reduce((sum, item) => sum + (item.price || item.product?.price || 0) * item.quantity, 0)
+    message: 'Cart is managed client-side via localStorage'
   })
 }
 
+// POST /api/cart - Add item to cart (client-side handles storage)
 export async function POST(request: Request) {
   try {
     const { productId, quantity, customBuild, buildName, parts, total } = await request.json()
     
-    const products = loadProducts()
-    let product = products.find((p: any) => p.id === productId)
+    // Fetch product from Supabase for validation
+    const { data: product, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .single()
     
-    // Handle custom build
-    if (customBuild) {
-      const existing = cart.find((item: any) => item.productId === productId)
-      if (existing) {
-        existing.quantity += quantity || 1
-      } else {
-        cart.push({
-          productId,
-          quantity: quantity || 1,
-          customBuild: true,
-          name: buildName || 'Custom Build',
-          price: total || 0,
-          parts: parts || [],
-          image: 'https://placehold.co/600x600/121722/E3A24C?text=Custom+Build'
-        })
-      }
-      return NextResponse.json(cart)
-    }
-    
-    // Handle regular product
-    if (!product) {
+    if (!product && !customBuild) {
       // Try to find by slug
-      product = products.find((p: any) => p.slug === productId)
-      if (!product) {
+      const { data: productBySlug, error: slugError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('slug', productId)
+        .single()
+      
+      if (slugError || !productBySlug) {
         return NextResponse.json(
           { error: 'Product not found' },
           { status: 404 }
         )
       }
-    }
-    
-    const existing = cart.find((item: any) => item.productId === product.id)
-    if (existing) {
-      existing.quantity += quantity || 1
-    } else {
-      cart.push({
-        productId: product.id,
-        quantity: quantity || 1,
-        product: product,
-        price: product.price,
-        name: product.name,
-        image: product.image
+      
+      // Return product info so client can add to localStorage
+      return NextResponse.json({
+        productId: productBySlug.id,
+        name: productBySlug.name,
+        price: productBySlug.price,
+        image: productBySlug.image,
+        inStock: productBySlug.in_stock
       })
     }
     
-    return NextResponse.json(cart)
+    if (product && !product.in_stock) {
+      return NextResponse.json(
+        { error: 'Product is out of stock' },
+        { status: 400 }
+      )
+    }
+    
+    return NextResponse.json({
+      success: true,
+      productId: product?.id || productId,
+      name: product?.name || buildName || 'Custom Build',
+      price: product?.price || total || 0,
+      image: product?.image || 'https://placehold.co/600x600/121722/E3A24C?text=Custom+Build'
+    })
   } catch (error: any) {
-    console.error('Cart error:', error)
+    console.error('Cart API error:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to add to cart' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const { productId } = await request.json()
-    cart = cart.filter((item: any) => item.productId !== productId)
-    return NextResponse.json(cart)
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || 'Failed to remove from cart' },
       { status: 500 }
     )
   }

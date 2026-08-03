@@ -1,27 +1,10 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+import { supabase } from '@/lib/supabase'
+import jwt from 'jsonwebtoken'
 
-const usersFilePath = path.join(process.cwd(), 'users.json')
-
-function loadUsers(): any[] {
-  try {
-    if (fs.existsSync(usersFilePath)) {
-      const data = fs.readFileSync(usersFilePath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error loading users:', error)
-  }
-  return []
-}
-
-function saveUsers(users: any[]) {
-  try {
-    fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2))
-  } catch (error) {
-    console.error('Error saving users:', error)
-  }
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined')
 }
 
 // GET /api/users/:id - Get user by ID
@@ -30,19 +13,42 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const users = loadUsers()
-    const user = users.find((u: any) => u.id === params.id)
-    
-    if (!user) {
+    // Verify authentication
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const token = authHeader.split(' ')[1]
+    const decoded = jwt.verify(token, JWT_SECRET) as any
+
+    // Only allow users to view their own profile or admins
+    if (decoded.userId !== params.id && decoded.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, email, name, role, created_at')
+      .eq('id', params.id)
+      .single()
+
+    if (error || !data) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
-    
-    const { password, ...userWithoutPassword } = user
-    return NextResponse.json(userWithoutPassword)
+
+    return NextResponse.json(data)
   } catch (error) {
+    console.error('User API error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch user' },
       { status: 500 }
@@ -56,26 +62,57 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const token = authHeader.split(' ')[1]
+    const decoded = jwt.verify(token, JWT_SECRET) as any
+
+    // Only allow users to update their own profile or admins
+    if (decoded.userId !== params.id && decoded.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
-    const users = loadUsers()
-    const index = users.findIndex((u: any) => u.id === params.id)
     
-    if (index === -1) {
+    // Build update object with only allowed fields
+    const updateData: any = {}
+    if (body.name) updateData.name = body.name
+    if (body.email) updateData.email = body.email
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', params.id)
+      .select('id, email, name, role, created_at')
+      .single()
+
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to update user' },
+        { status: 500 }
+      )
+    }
+
+    if (!data) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
-    
-    // Update only allowed fields
-    users[index].name = body.name || users[index].name
-    users[index].email = body.email || users[index].email
-    
-    saveUsers(users)
-    
-    const { password, ...userWithoutPassword } = users[index]
-    return NextResponse.json(userWithoutPassword)
+
+    return NextResponse.json(data)
   } catch (error) {
+    console.error('User API error:', error)
     return NextResponse.json(
       { error: 'Failed to update user' },
       { status: 500 }
