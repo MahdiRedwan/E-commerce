@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { setToken, setStoredUser, getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { user, login } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,11 +15,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const user = getStoredUser();
     if (user) {
       router.push("/");
     }
-  }, [router]);
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,10 +47,8 @@ export default function RegisterPage() {
       const loginData = await loginRes.json();
 
       if (loginRes.ok) {
-        setToken(loginData.token);
-        setStoredUser(loginData.user);
+        login(loginData.user, loginData.token);
         router.push("/");
-        window.location.reload();
       } else {
         router.push("/login");
       }

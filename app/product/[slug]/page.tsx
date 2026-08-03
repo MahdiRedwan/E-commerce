@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProduct } from "@/lib/data";
 import { addToCart } from "@/lib/cart";
+import { useCart } from "@/context/CartContext";
 import { Product } from "@/lib/types";
 
 interface Props {
@@ -15,6 +16,7 @@ export default function ProductPage({ params }: Props) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const { addToCart: addToCartContext } = useCart();
 
   useEffect(() => {
     getProduct(params.slug).then((data) => {
@@ -27,7 +29,7 @@ export default function ProductPage({ params }: Props) {
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart(product.id, quantity);
+      addToCartContext(product.id, quantity);
       alert(`Added ${quantity} x ${product.name} to cart!`);
     }
   };
@@ -57,6 +59,7 @@ export default function ProductPage({ params }: Props) {
       </nav>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+        {/* Image */}
         <div className="relative aspect-square border border-line bg-surface">
           <img
             src={product.image}
@@ -65,6 +68,7 @@ export default function ProductPage({ params }: Props) {
           />
         </div>
 
+        {/* Details */}
         <div>
           <h1 className="font-display text-3xl font-bold text-ink">{product.name}</h1>
           
@@ -75,22 +79,22 @@ export default function ProductPage({ params }: Props) {
           )}
 
           <div className="mt-4 flex items-center gap-4">
-            <span className="text-2xl font-bold text-ink">?{product.price}</span>
+            <span className="text-2xl font-bold text-ink">৳{product.price}</span>
             {product.compareAtPrice && (
-              <span className="text-muted line-through">?{product.compareAtPrice}</span>
+              <span className="text-muted line-through">৳{product.compareAtPrice}</span>
             )}
           </div>
 
           {product.rating && (
             <div className="mt-2 flex items-center gap-2 text-sm text-muted">
-              <span>? {product.rating}</span>
+              <span>⭐ {product.rating}</span>
               <span>({product.reviewCount} reviews)</span>
             </div>
           )}
 
           <div className="mt-4">
             <span className={product.inStock ? "text-green-500" : "text-red-500"}>
-              {product.inStock ? "? In Stock" : "? Out of Stock"}
+              {product.inStock ? "✅ In Stock" : "❌ Out of Stock"}
             </span>
           </div>
 
@@ -108,6 +112,7 @@ export default function ProductPage({ params }: Props) {
             </div>
           )}
 
+          {/* Add to Cart */}
           <div className="mt-6 flex items-center gap-4">
             <div className="flex items-center border border-line">
               <button

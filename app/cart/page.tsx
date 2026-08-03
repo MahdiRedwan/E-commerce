@@ -1,50 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getCart, removeFromCart, addToCart, subscribe } from "@/lib/cart";
-import { CartItem } from "@/lib/cart";
+import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [total, setTotal] = useState(0);
+  const { items, totalItems, totalPrice, removeFromCart, updateQuantity } = useCart();
+  const { user } = useAuth();
 
-  const refreshCart = () => {
-    const items = getCart();
-    setCartItems([...items]);
-    const totalPrice = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-    setTotal(totalPrice);
-  };
-
-  useEffect(() => {
-    refreshCart();
-    const unsubscribe = subscribe(refreshCart);
-    return unsubscribe;
-  }, []);
-
-  const handleRemove = (productId: string) => {
-    removeFromCart(productId);
-  };
-
-  const handleUpdateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    const currentItem = cartItems.find(item => item.productId === productId);
-    if (currentItem) {
-      const diff = newQuantity - currentItem.quantity;
-      if (diff > 0) {
-        addToCart(productId, diff);
-      } else {
-        // Remove and re-add with new quantity
-        removeFromCart(productId);
-        // Add back with new quantity
-        for (let i = 0; i < newQuantity; i++) {
-          addToCart(productId);
-        }
-      }
-    }
-  };
-
-  if (cartItems.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="mx-auto max-w-7xl px-6 py-16 text-center">
         <h1 className="font-display text-3xl font-bold text-ink">Your Cart</h1>
@@ -65,7 +29,7 @@ export default function CartPage() {
 
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          {cartItems.map((item) => (
+          {items.map((item) => (
             <div
               key={item.productId}
               className="flex items-center gap-4 border-b border-line py-4"
@@ -82,20 +46,20 @@ export default function CartPage() {
                 >
                   {item.product.name}
                 </Link>
-                <p className="text-sm text-muted">?{item.product.price}</p>
+                <p className="text-sm text-muted">৳{item.product.price}</p>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   className="border border-line px-2 py-1 text-ink hover:bg-surface"
-                  onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
+                  onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                 >
                   -
                 </button>
                 <span className="w-8 text-center text-ink">{item.quantity}</span>
                 <button
                   className="border border-line px-2 py-1 text-ink hover:bg-surface"
-                  onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
+                  onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                 >
                   +
                 </button>
@@ -103,9 +67,9 @@ export default function CartPage() {
 
               <button
                 className="text-red-500 hover:text-red-700"
-                onClick={() => handleRemove(item.productId)}
+                onClick={() => removeFromCart(item.productId)}
               >
-                ?
+                ✕
               </button>
             </div>
           ))}
@@ -117,7 +81,7 @@ export default function CartPage() {
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted">Subtotal</span>
-                <span className="text-ink">?{total}</span>
+                <span className="text-ink">৳{totalPrice}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted">Shipping</span>
@@ -126,15 +90,16 @@ export default function CartPage() {
               <div className="border-t border-line pt-4">
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span>?{total}</span>
+                  <span>৳{totalPrice}</span>
                 </div>
               </div>
             </div>
-            <button
-              className="mt-6 w-full bg-trace px-6 py-3 text-base font-semibold hover:opacity-80"
+            <Link
+              href={user ? "/checkout" : "/login"}
+              className="mt-6 flex w-full items-center justify-center bg-trace px-6 py-3 text-base font-semibold hover:opacity-80"
             >
-              Proceed to Checkout
-            </button>
+              {user ? "Proceed to Checkout" : "Login to Checkout"}
+            </Link>
           </div>
         </div>
       </div>

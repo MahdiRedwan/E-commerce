@@ -1,38 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import CategoryMegaMenu from "./CategoryMegaMenu";
-import { getTotalItems, getTotalPrice, subscribe } from "@/lib/cart";
-import { getStoredUser, clearStoredUser } from "@/lib/auth";
+import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [user, setUser] = useState<any>(null);
-
-  const refreshCart = () => {
-    setTotalItems(getTotalItems());
-    setTotalPrice(getTotalPrice());
-  };
-
-  useEffect(() => {
-    refreshCart();
-    const unsubscribe = subscribe(refreshCart);
-    
-    // Check if user is logged in
-    const storedUser = getStoredUser();
-    if (storedUser) {
-      setUser(storedUser);
-    }
-    
-    return unsubscribe;
-  }, []);
+  const { user, logout } = useAuth();
+  const { totalItems, totalPrice } = useCart();
 
   const handleLogout = () => {
-    clearStoredUser();
-    setUser(null);
+    logout();
     window.location.href = "/";
   };
 
@@ -72,9 +52,8 @@ export default function Navbar() {
           Circuit<span className="text-trace">Forge</span>
         </Link>
 
-        {/* Search Form */}
-        <form 
-          className="hidden flex-1 items-center md:flex" 
+        <form
+          className="hidden flex-1 items-center md:flex"
           role="search"
           onSubmit={(e) => {
             e.preventDefault();
@@ -105,7 +84,7 @@ export default function Navbar() {
             <div className="flex items-center gap-3 text-sm">
               <Link href="/account" className="text-muted hover:text-trace">Welcome,</Link>
               <Link href="/account" className="font-medium hover:text-trace">{user.name}</Link>
-              {user.role === 'admin' && (
+              {user.role === "admin" && (
                 <Link href="/admin" className="text-xs text-trace hover:underline">
                   Admin
                 </Link>
@@ -143,7 +122,7 @@ export default function Navbar() {
         <div className="border-t border-line bg-surface px-6 py-4 lg:hidden">
           <ul className="grid grid-cols-2 gap-2">
             {(() => {
-              const { categories } = require('@/lib/data');
+              const { categories } = require("@/lib/data");
               return categories.map((cat: any) => (
                 <li key={cat.slug}>
                   <Link
