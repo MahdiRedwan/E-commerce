@@ -33,6 +33,7 @@ export default function LoginPage() {
       setToken(data.token);
       setStoredUser(data.user);
       router.push("/");
+      window.location.reload();
     } catch (err: any) {
       setError(err.message);
     } finally {
