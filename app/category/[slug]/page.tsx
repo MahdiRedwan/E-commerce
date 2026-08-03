@@ -13,8 +13,10 @@ export function generateStaticParams() {
   return categories.map((c) => ({ slug: c.slug }));
 }
 
+// Use a simpler metadata approach
 export function generateMetadata({ params }: Props) {
-  const category = getCategory(params.slug);
+  // Find category synchronously from the static array
+  const category = categories.find((c) => c.slug === params.slug);
   const label = category?.label || 'Category';
   return {
     title: `${label} — CircuitForge`,
@@ -22,7 +24,8 @@ export function generateMetadata({ params }: Props) {
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {
-  const category = getCategory(params.slug);
+  // Find category synchronously from the static array
+  const category = categories.find((c) => c.slug === params.slug);
   if (!category) notFound();
 
   // Get products from the static data
