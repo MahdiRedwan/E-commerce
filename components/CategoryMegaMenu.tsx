@@ -33,7 +33,7 @@ export default function CategoryMegaMenu() {
             {openSlug === cat.slug && cat.subcategories && (
               <div className="absolute left-0 top-full z-40 w-64 border border-line bg-surface-2 p-2 shadow-2xl">
                 <ul>
-                  {cat.subcategories.map((sub) => (
+                  {cat.subcategories.map((sub: string) => (
                     <li key={sub}>
                       <Link
                         href={`/category/${cat.slug}`}
