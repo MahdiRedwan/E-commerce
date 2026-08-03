@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
-export default function OrderConfirmationPage() {
-  const router = useRouter();
+function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('id');
   const [order, setOrder] = useState<any>(null);
@@ -13,7 +13,7 @@ export default function OrderConfirmationPage() {
 
   useEffect(() => {
     if (!orderId) {
-      router.push('/');
+      setLoading(false);
       return;
     }
 
@@ -26,7 +26,7 @@ export default function OrderConfirmationPage() {
       .catch(() => {
         setLoading(false);
       });
-  }, [orderId, router]);
+  }, [orderId]);
 
   if (loading) {
     return (
@@ -56,7 +56,7 @@ export default function OrderConfirmationPage() {
         <span className="text-6xl">✅</span>
         <h1 className="mt-4 font-display text-3xl font-bold text-green-700">Order Placed Successfully!</h1>
         <p className="mt-2 text-green-600">Order #{order.id}</p>
-        <p className="text-sm text-muted">Thank you for your order, {order.userId}</p>
+        <p className="text-sm text-muted">Thank you for your order!</p>
       </div>
 
       <div className="mt-8 border border-line bg-surface p-6 text-left">
@@ -105,5 +105,13 @@ export default function OrderConfirmationPage() {
         View My Orders
       </Link>
     </div>
+  );
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-7xl px-6 py-16 text-center"><p className="text-muted">Loading...</p></div>}>
+      <OrderConfirmationContent />
+    </Suspense>
   );
 }

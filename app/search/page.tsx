@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import ProductGrid from "@/components/ProductGrid";
 
-export default function SearchPage() {
+function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   
@@ -28,6 +29,14 @@ export default function SearchPage() {
       .catch(() => setLoading(false));
   }, [query]);
 
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-6 py-12">
+        <p className="text-muted">Searching...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-12">
       <h1 className="font-display text-3xl font-bold text-ink">
@@ -37,11 +46,9 @@ export default function SearchPage() {
         {query ? `Showing results for "${query}"` : 'Enter a search term'}
       </p>
 
-      {loading ? (
-        <p className="text-muted mt-8">Searching...</p>
-      ) : products.length === 0 ? (
+      {products.length === 0 ? (
         <div className="mt-8 text-center">
-          <p className="text-muted">No products found for &quot;{query}&quot;</p>
+          <p className="text-muted">No products found for "{query}"</p>
           <Link
             href="/"
             className="mt-4 inline-block bg-trace px-6 py-2 text-base font-semibold hover:opacity-80"
@@ -56,5 +63,13 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-7xl px-6 py-12"><p className="text-muted">Loading...</p></div>}>
+      <SearchResults />
+    </Suspense>
   );
 }
