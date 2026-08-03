@@ -9,12 +9,15 @@ import CustomBuildCTA from "@/components/CustomBuildCTA";
 import AIInsights from "@/components/AIInsights";
 import Newsletter from "@/components/Newsletter";
 import { getFeaturedProducts } from "@/lib/data";
+import type { Product } from "@/lib/types";
 
 export default function Home() {
-  const [featured, setFeatured] = useState([]);
+  const [featured, setFeatured] = useState<Product[]>([]);
 
   useEffect(() => {
-    getFeaturedProducts(8).then(setFeatured).catch(console.error);
+    getFeaturedProducts(8)
+      .then((data: Product[]) => setFeatured(data))
+      .catch(console.error);
   }, []);
 
   return (
