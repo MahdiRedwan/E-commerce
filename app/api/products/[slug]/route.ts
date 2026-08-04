@@ -1,136 +1,114 @@
-"use client";
+import { NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { mapProduct } from '@/lib/mapData';
-import { supabase } from '@/lib/supabase';
-
-interface CartItem {
-  productId: string;
-  quantity: number;
-  product: any;
-}
-
-interface CartContextType {
-  items: CartItem[];
-  totalItems: number;
-  totalPrice: number;
-  addToCart: (productId: string, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
-  refreshCart: () => void;
-}
-
-const CartContext = createContext<CartContextType | undefined>(undefined);
-
-function loadCart(): CartItem[] {
-  if (typeof window === "undefined") return [];
+// GET /api/products/:slug - Get a single product
+export async function GET(
+  request: Request,
+  { params }: { params: { slug: string } }
+) {
   try {
-    const data = localStorage.getItem("cart_items");
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('slug', params.slug)
+      .single()
+    
+    if (error || !data) {
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      )
+    }
+    
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('Product API error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch product' },
+      { status: 500 }
+    )
   }
 }
 
-function saveCart(items: CartItem[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("cart_items", JSON.stringify(items));
-}
-
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-
-  const refreshCart = () => {
-    setItems(loadCart());
-  };
-
-  useEffect(() => {
-    refreshCart();
-  }, []);
-
-  const addToCart = async (productId: string, quantity: number = 1) => {
-    const currentItems = loadCart();
-    const existing = currentItems.find((item) => item.productId === productId);
-
-    if (existing) {
-      existing.quantity += quantity;
-    } else {
-      try {
-        // Fetch product by ID directly from Supabase
-        const { data: productData, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', productId)
-          .single();
-
-        if (error || !productData) {
-          console.error('Product not found:', error);
-          return;
-        }
-
-        const product = mapProduct(productData);
-        currentItems.push({ productId, quantity, product });
-      } catch (error) {
-        console.error("Failed to fetch product:", error);
-        return;
-      }
+// PUT /api/products/:slug - Update a product
+export async function PUT(
+  request: Request,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const body = await request.json()
+    
+    const updateData = {
+      name: body.name,
+      category_slug: body.categorySlug || body.category_slug,
+      subcategory: body.subcategory || null,
+      price: body.price ? parseFloat(body.price) : undefined,
+      compare_at_price: body.compareAtPrice ? parseFloat(body.compareAtPrice) : null,
+      image: body.image,
+      rating: body.rating ? parseFloat(body.rating) : null,
+      review_count: body.reviewCount ? parseInt(body.reviewCount) : null,
+      in_stock: body.inStock !== undefined ? body.inStock : true,
+      badge: body.badge || null,
+      specs: body.specs || []
     }
-
-    saveCart(currentItems);
-    setItems(currentItems);
-  };
-
-  const removeFromCart = (productId: string) => {
-    const currentItems = loadCart().filter((item) => item.productId !== productId);
-    saveCart(currentItems);
-    setItems(currentItems);
-  };
-
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity < 1) return;
-    const currentItems = loadCart();
-    const item = currentItems.find((i) => i.productId === productId);
-    if (item) {
-      item.quantity = quantity;
-      saveCart(currentItems);
-      setItems(currentItems);
+    
+    const { data, error } = await supabase
+      .from('products')
+      .update(updateData)
+      .eq('slug', params.slug)
+      .select()
+      .single()
+    
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to update product' },
+        { status: 500 }
+      )
     }
-  };
-
-  const clearCart = () => {
-    saveCart([]);
-    setItems([]);
-  };
-
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce(
-    (sum, item) => sum + (item.product?.price || 0) * item.quantity,
-    0
-  );
-
-  return (
-    <CartContext.Provider
-      value={{
-        items,
-        totalItems,
-        totalPrice,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        refreshCart,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
-  );
-}
-
-export function useCart() {
-  const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error("useCart must be used within a CartProvider");
+    
+    if (!data) {
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      )
+    }
+    
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('Product API error:', error)
+    return NextResponse.json(
+      { error: 'Failed to update product' },
+      { status: 500 }
+    )
   }
-  return context;
+}
+
+// DELETE /api/products/:slug - Delete a product
+export async function DELETE(
+  request: Request,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('slug', params.slug)
+    
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete product' },
+        { status: 500 }
+      )
+    }
+    
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Product API error:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete product' },
+      { status: 500 }
+    )
+  }
 }

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { mapProduct } from '@/lib/mapData';
+import { supabase } from '@/lib/supabase';
 
 interface CartItem {
   productId: string;
@@ -56,12 +57,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
       existing.quantity += quantity;
     } else {
       try {
-        const res = await fetch(`/api/products/${productId}`);
-        const productData = await res.json();
-        if (productData) {
-          const product = mapProduct(productData);
-          currentItems.push({ productId, quantity, product });
+        const { data: productData, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', productId)
+          .single();
+
+        if (error || !productData) {
+          console.error('Product not found:', error);
+          return;
         }
+
+        const product = mapProduct(productData);
+        currentItems.push({ productId, quantity, product });
       } catch (error) {
         console.error("Failed to fetch product:", error);
         return;
