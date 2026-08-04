@@ -30,7 +30,11 @@ export async function getCategory(slug: string): Promise<Category | undefined> {
     return undefined
   }
   
-  return data ? mapCategory(data) : undefined
+  if (!data) return undefined
+  
+  // Map the single category using mapCategories with an array
+  const mapped = mapCategories([data])
+  return mapped[0]
 }
 
 // ============ PRODUCTS ============
