@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { Category, Product } from './types'
+import { mapProducts, mapCategories, mapProduct } from './mapData'
 
 // ============ CATEGORIES ============
 
@@ -14,7 +15,7 @@ export async function getCategories(): Promise<Category[]> {
     return []
   }
   
-  return data || []
+  return mapCategories(data || [])
 }
 
 export async function getCategory(slug: string): Promise<Category | undefined> {
@@ -29,7 +30,7 @@ export async function getCategory(slug: string): Promise<Category | undefined> {
     return undefined
   }
   
-  return data
+  return data ? mapCategory(data) : undefined
 }
 
 // ============ PRODUCTS ============
@@ -45,7 +46,7 @@ export async function getProducts(): Promise<Product[]> {
     return []
   }
   
-  return data || []
+  return mapProducts(data || [])
 }
 
 export async function getProductsByCategory(category_slug: string): Promise<Product[]> {
@@ -60,7 +61,7 @@ export async function getProductsByCategory(category_slug: string): Promise<Prod
     return []
   }
   
-  return data || []
+  return mapProducts(data || [])
 }
 
 export async function getProduct(slug: string): Promise<Product | undefined> {
@@ -75,7 +76,7 @@ export async function getProduct(slug: string): Promise<Product | undefined> {
     return undefined
   }
   
-  return data
+  return data ? mapProduct(data) : undefined
 }
 
 export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
@@ -90,7 +91,7 @@ export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
     return []
   }
   
-  return data || []
+  return mapProducts(data || [])
 }
 
 // ============ STATIC FALLBACK DATA (for development) ============
