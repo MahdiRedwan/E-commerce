@@ -82,7 +82,7 @@ export default function AdminOrdersPage() {
                   <tr key={order.id} className="border-b border-line">
                     <td className="p-4 text-ink">#{order.id}</td>
                     <td className="p-4 text-ink">
-                      {new Date(order.createdAt).toLocaleDateString()}
+                      {new Date(order.createdAt || order.created_at).toLocaleDateString()}
                     </td>
                     <td className="p-4 text-ink">{order.items.length} items</td>
                     <td className="p-4 text-ink">৳{order.total}</td>
