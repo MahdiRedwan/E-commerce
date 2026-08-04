@@ -73,7 +73,9 @@ export default function OrdersPage() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="font-medium text-ink">Order #{order.id}</p>
-                <p className="text-sm text-muted">{new Date(order.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm text-muted">
+                  {new Date(order.createdAt || order.created_at).toLocaleDateString()}
+                </p>
                 <p className="text-sm text-muted">{order.items.length} items</p>
               </div>
               <div className="text-right">
