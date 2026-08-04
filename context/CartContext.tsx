@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { mapProduct } from '@/lib/mapData';
 
 interface CartItem {
   productId: string;
@@ -56,8 +57,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } else {
       try {
         const res = await fetch(`/api/products/${productId}`);
-        const product = await res.json();
-        if (product) {
+        const productData = await res.json();
+        if (productData) {
+          const product = mapProduct(productData);
           currentItems.push({ productId, quantity, product });
         }
       } catch (error) {
