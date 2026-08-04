@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const token = authHeader.split(' ')[1]
     const decoded = jwt.verify(token, JWT_SECRET) as any
     
-    const user = findUserById(decoded.userId)
+    const user = await findUserById(decoded.userId)
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
