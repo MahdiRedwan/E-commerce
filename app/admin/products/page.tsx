@@ -31,11 +31,11 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (slug: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await fetch(`/api/products/${slug}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -91,23 +91,23 @@ export default function AdminProductsPage() {
                       <img src={product.image} alt={product.name} className="h-12 w-12 object-contain" />
                     </td>
                     <td className="p-4 text-ink">{product.name}</td>
-                    <td className="p-4 text-ink">{product.categorySlug}</td>
+                    <td className="p-4 text-ink">{product.category_slug}</td>
                     <td className="p-4 text-ink">৳{product.price}</td>
                     <td className="p-4">
-                      <span className={product.inStock ? "text-green-500" : "text-red-500"}>
-                        {product.inStock ? "In Stock" : "Out of Stock"}
+                      <span className={product.in_stock ? "text-green-500" : "text-red-500"}>
+                        {product.in_stock ? "In Stock" : "Out of Stock"}
                       </span>
                     </td>
                     <td className="p-4">
                       <div className="flex gap-2">
                         <Link
-                          href={`/admin/products/${product.id}/edit`}
+                          href={`/admin/products/${product.slug}/edit`}
                           className="text-blue-500 hover:text-blue-700"
                         >
                           Edit
                         </Link>
                         <button
-                          onClick={() => handleDelete(product.id)}
+                          onClick={() => handleDelete(product.slug)}
                           className="text-red-500 hover:text-red-700"
                         >
                           Delete
