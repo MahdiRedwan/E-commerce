@@ -10,15 +10,15 @@ export interface Product {
   id: string;
   slug: string;
   name: string;
-  categorySlug: string;
-  subcategory?: string;  // ← ADDED for filtering
+  category_slug: string;
+  subcategory?: string;
   price: number;
-  compareAtPrice?: number;
+  compare_at_price?: number;
   currency?: string;
   image: string;
   rating?: number;
-  reviewCount?: number;
-  inStock: boolean;
+  review_count?: number;
+  in_stock: boolean;
   badge?: "New" | "Sale" | "Best Seller" | "Deal";
   specs?: { label: string; value: string }[];
 }
