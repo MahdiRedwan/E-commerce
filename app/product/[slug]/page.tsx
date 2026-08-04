@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProduct } from "@/lib/data";
-import { addToCart } from "@/lib/cart";
 import { useCart } from "@/context/CartContext";
 import { Product } from "@/lib/types";
 
@@ -51,8 +50,8 @@ export default function ProductPage({ params }: Props) {
       <nav className="mb-6 font-mono text-xs uppercase tracking-wide text-muted">
         <Link href="/" className="hover:text-trace">Home</Link>
         <span className="mx-2">/</span>
-        <Link href={`/category/${product.categorySlug}`} className="hover:text-trace">
-          {product.categorySlug}
+        <Link href={`/category/${product.category_slug}`} className="hover:text-trace">
+          {product.category_slug}
         </Link>
         <span className="mx-2">/</span>
         <span className="text-ink">{product.name}</span>
@@ -80,21 +79,21 @@ export default function ProductPage({ params }: Props) {
 
           <div className="mt-4 flex items-center gap-4">
             <span className="text-2xl font-bold text-ink">৳{product.price}</span>
-            {product.compareAtPrice && (
-              <span className="text-muted line-through">৳{product.compareAtPrice}</span>
+            {product.compare_at_price && (
+              <span className="text-muted line-through">৳{product.compare_at_price}</span>
             )}
           </div>
 
           {product.rating && (
             <div className="mt-2 flex items-center gap-2 text-sm text-muted">
               <span>⭐ {product.rating}</span>
-              <span>({product.reviewCount} reviews)</span>
+              <span>({product.review_count} reviews)</span>
             </div>
           )}
 
           <div className="mt-4">
-            <span className={product.inStock ? "text-green-500" : "text-red-500"}>
-              {product.inStock ? "✅ In Stock" : "❌ Out of Stock"}
+            <span className={product.in_stock ? "text-green-500" : "text-red-500"}>
+              {product.in_stock ? "✅ In Stock" : "❌ Out of Stock"}
             </span>
           </div>
 
@@ -132,7 +131,7 @@ export default function ProductPage({ params }: Props) {
             <button
               className="flex-1 bg-trace px-6 py-3 text-base font-semibold hover:opacity-80 disabled:opacity-50"
               onClick={handleAddToCart}
-              disabled={!product.inStock}
+              disabled={!product.in_stock}
             >
               Add to Cart
             </button>
