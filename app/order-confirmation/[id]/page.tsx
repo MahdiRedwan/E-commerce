@@ -46,6 +46,9 @@ export default function OrderConfirmationPage() {
     );
   }
 
+  // Get shipping address from either snake_case or camelCase
+  const shipping = order.shipping_address || order.shippingAddress || {};
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-16 text-center">
       <div className="border border-green-500 bg-green-50 p-6">
@@ -77,15 +80,17 @@ export default function OrderConfirmationPage() {
         <div className="mt-4 pt-4 border-t border-line">
           <h3 className="font-medium text-ink">Shipping Address</h3>
           <p className="text-sm text-muted mt-1">
-            {order.shippingAddress.street}<br />
-            {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zip}<br />
-            {order.shippingAddress.country}
+            {shipping.street}<br />
+            {shipping.city}, {shipping.state} {shipping.zip}<br />
+            {shipping.country}
           </p>
         </div>
 
         <div className="mt-4 pt-4 border-t border-line">
           <h3 className="font-medium text-ink">Payment Method</h3>
-          <p className="text-sm text-muted mt-1 capitalize">{order.paymentMethod.replace('-', ' ')}</p>
+          <p className="text-sm text-muted mt-1 capitalize">
+            {order.payment_method || order.paymentMethod || 'Not specified'}
+          </p>
         </div>
 
         <div className="mt-4 pt-4 border-t border-line">
