@@ -99,7 +99,9 @@ export default function AdminPage() {
             <div key={order.id} className="flex justify-between items-center border-b border-line p-4 last:border-0">
               <div>
                 <p className="font-medium text-ink">Order #{order.id}</p>
-                <p className="text-sm text-muted">{new Date(order.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm text-muted">
+                  {new Date(order.createdAt || order.created_at).toLocaleDateString()}
+                </p>
               </div>
               <div className="text-right">
                 <p className="text-ink">৳{order.total}</p>
