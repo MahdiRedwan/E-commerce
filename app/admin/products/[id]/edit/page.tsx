@@ -17,13 +17,13 @@ export default function EditProductPage() {
   const [form, setForm] = useState({
     name: "",
     slug: "",
-    categorySlug: "",
+    category_slug: "",
     price: "",
-    compareAtPrice: "",
+    compare_at_price: "",
     image: "",
     rating: "",
-    reviewCount: "",
-    inStock: true,
+    review_count: "",
+    in_stock: true,
     badge: "",
     specs: [{ label: "", value: "" }]
   });
@@ -35,7 +35,6 @@ export default function EditProductPage() {
       return;
     }
 
-    // Fetch categories and product data
     Promise.all([
       fetch('/api/categories').then(res => res.json()),
       fetch(`/api/products/${productId}`).then(res => res.json())
@@ -44,13 +43,13 @@ export default function EditProductPage() {
       setForm({
         name: productData.name || "",
         slug: productData.slug || "",
-        categorySlug: productData.categorySlug || "",
+        category_slug: productData.category_slug || "",
         price: productData.price?.toString() || "",
-        compareAtPrice: productData.compareAtPrice?.toString() || "",
+        compare_at_price: productData.compare_at_price?.toString() || "",
         image: productData.image || "",
         rating: productData.rating?.toString() || "",
-        reviewCount: productData.reviewCount?.toString() || "",
-        inStock: productData.inStock ?? true,
+        review_count: productData.review_count?.toString() || "",
+        in_stock: productData.in_stock ?? true,
         badge: productData.badge || "",
         specs: productData.specs?.length ? productData.specs : [{ label: "", value: "" }]
       });
@@ -66,9 +65,9 @@ export default function EditProductPage() {
       const productData = {
         ...form,
         price: parseFloat(form.price),
-        compareAtPrice: form.compareAtPrice ? parseFloat(form.compareAtPrice) : undefined,
+        compare_at_price: form.compare_at_price ? parseFloat(form.compare_at_price) : undefined,
         rating: form.rating ? parseFloat(form.rating) : undefined,
-        reviewCount: form.reviewCount ? parseInt(form.reviewCount) : undefined,
+        review_count: form.review_count ? parseInt(form.review_count) : undefined,
         specs: form.specs.filter(s => s.label && s.value)
       };
 
@@ -151,8 +150,8 @@ export default function EditProductPage() {
             <div>
               <label className="block text-sm font-medium text-ink">Category</label>
               <select
-                value={form.categorySlug}
-                onChange={(e) => setForm({ ...form, categorySlug: e.target.value })}
+                value={form.category_slug}
+                onChange={(e) => setForm({ ...form, category_slug: e.target.value })}
                 className="mt-1 w-full border border-line bg-base px-4 py-2 text-ink focus:border-trace"
               >
                 {categories.map((cat) => (
@@ -178,8 +177,8 @@ export default function EditProductPage() {
                 <input
                   type="number"
                   step="0.01"
-                  value={form.compareAtPrice}
-                  onChange={(e) => setForm({ ...form, compareAtPrice: e.target.value })}
+                  value={form.compare_at_price}
+                  onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })}
                   className="mt-1 w-full border border-line bg-base px-4 py-2 text-ink focus:border-trace"
                 />
               </div>
@@ -212,8 +211,8 @@ export default function EditProductPage() {
                 <label className="block text-sm font-medium text-ink">Review Count</label>
                 <input
                   type="number"
-                  value={form.reviewCount}
-                  onChange={(e) => setForm({ ...form, reviewCount: e.target.value })}
+                  value={form.review_count}
+                  onChange={(e) => setForm({ ...form, review_count: e.target.value })}
                   className="mt-1 w-full border border-line bg-base px-4 py-2 text-ink focus:border-trace"
                 />
               </div>
@@ -237,8 +236,8 @@ export default function EditProductPage() {
             <div>
               <label className="block text-sm font-medium text-ink">In Stock</label>
               <select
-                value={String(form.inStock)}
-                onChange={(e) => setForm({ ...form, inStock: e.target.value === 'true' })}
+                value={String(form.in_stock)}
+                onChange={(e) => setForm({ ...form, in_stock: e.target.value === 'true' })}
                 className="mt-1 w-full border border-line bg-base px-4 py-2 text-ink focus:border-trace"
               >
                 <option value="true">Yes</option>
@@ -248,7 +247,6 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* Specifications */}
         <div className="border border-line bg-surface p-6">
           <div className="flex justify-between items-center">
             <h2 className="font-display text-xl font-bold text-ink">Specifications</h2>
