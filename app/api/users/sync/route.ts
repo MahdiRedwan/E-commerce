@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     
-    console.log('🔍 Sync request body:', body)
+    console.log('🔍 Sync request:', body)
     
     if (!body.id || !body.email) {
       return NextResponse.json(
@@ -14,22 +14,52 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if user exists
-    const { data: existing, error: checkError } = await supabase
+    // Step 1: Check if user exists by email
+    const { data: existingUser, error: checkError } = await supabase
       .from('users')
-      .select('id')
-      .eq('id', body.id)
+      .select('id, email')
+      .eq('email', body.email)
       .single()
 
-    console.log('🔍 Existing user:', existing)
-    console.log('🔍 Check error:', checkError)
+    console.log('🔍 Existing user:', existingUser)
 
-    if (existing) {
-      return NextResponse.json({ message: 'User already exists' })
+    if (existingUser) {
+      // User exists by email — update the ID if needed
+      if (existingUser.id !== body.id) {
+        console.log('🔄 User exists with different ID. Updating...')
+        
+        // Update orders to the new ID
+        await supabase
+          .from('orders')
+          .update({ user_id: body.id })
+          .eq('user_id', existingUser.id)
+        
+        // Update the user ID
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ id: body.id })
+          .eq('id', existingUser.id)
+        
+        if (updateError) {
+          console.error('Update error:', updateError)
+          return NextResponse.json(
+            { error: 'Failed to update user' },
+            { status: 500 }
+          )
+        }
+        
+        console.log('✅ User ID updated successfully')
+        return NextResponse.json({ success: true, action: 'updated' })
+      }
+      
+      console.log('✅ User already exists and ID matches')
+      return NextResponse.json({ success: true, action: 'exists' })
     }
 
-    // Insert user
-    const { data, error } = await supabase
+    // Step 2: User doesn't exist — insert new
+    console.log('🆕 Creating new user...')
+    
+    const { error: insertError } = await supabase
       .from('users')
       .insert({
         id: body.id,
@@ -38,20 +68,17 @@ export async function POST(request: Request) {
         name: body.name || body.email,
         role: body.role || 'customer'
       })
-      .select()
 
-    console.log('🔍 Insert result:', data)
-    console.log('🔍 Insert error:', error)
-
-    if (error) {
-      console.error('Supabase insert error:', error)
+    if (insertError) {
+      console.error('Insert error:', insertError)
       return NextResponse.json(
-        { error: error.message || 'Failed to create user' },
+        { error: 'Failed to create user' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ success: true, data })
+    console.log('✅ New user created successfully')
+    return NextResponse.json({ success: true, action: 'created' })
   } catch (error) {
     console.error('Sync error:', error)
     return NextResponse.json(
