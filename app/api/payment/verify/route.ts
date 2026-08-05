@@ -21,6 +21,8 @@ export async function GET(request: Request) {
     }
 
     const session = await stripe.checkout.sessions.retrieve(sessionId)
+    
+    console.log('🔍 Session data:', JSON.stringify(session, null, 2))
 
     if (session.payment_status !== 'paid') {
       return NextResponse.json(
