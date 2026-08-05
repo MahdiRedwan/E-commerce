@@ -22,17 +22,21 @@ export async function POST(request: Request) {
       .single()
 
     console.log('🔍 Existing user:', existingUser)
+    console.log('🔍 Check error:', checkError)
 
     if (existingUser) {
       // User exists by email — update the ID if needed
       if (existingUser.id !== body.id) {
         console.log('🔄 User exists with different ID. Updating...')
+        console.log('🔍 Updating orders from:', existingUser.id, 'to:', body.id)
         
         // Update orders to the new ID
-        await supabase
+        const { error: ordersError } = await supabase
           .from('orders')
           .update({ user_id: body.id })
           .eq('user_id', existingUser.id)
+        
+        console.log('🔍 Orders update result:', ordersError)
         
         // Update the user ID
         const { error: updateError } = await supabase
@@ -40,10 +44,11 @@ export async function POST(request: Request) {
           .update({ id: body.id })
           .eq('id', existingUser.id)
         
+        console.log('🔍 User update error:', updateError)
+        
         if (updateError) {
-          console.error('Update error:', updateError)
           return NextResponse.json(
-            { error: 'Failed to update user' },
+            { error: `Failed to update user: ${updateError.message}` },
             { status: 500 }
           )
         }
@@ -69,20 +74,21 @@ export async function POST(request: Request) {
         role: body.role || 'customer'
       })
 
+    console.log('🔍 Insert error:', insertError)
+
     if (insertError) {
-      console.error('Insert error:', insertError)
       return NextResponse.json(
-        { error: 'Failed to create user' },
+        { error: `Failed to create user: ${insertError.message}` },
         { status: 500 }
       )
     }
 
     console.log('✅ New user created successfully')
     return NextResponse.json({ success: true, action: 'created' })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Sync error:', error)
     return NextResponse.json(
-      { error: 'Failed to sync user' },
+      { error: `Sync error: ${error.message}` },
       { status: 500 }
     )
   }
