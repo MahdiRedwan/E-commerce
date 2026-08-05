@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/search?q=keyword
 export async function GET(request: Request) {
   try {
