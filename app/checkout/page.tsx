@@ -3,15 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getCart, getTotalPrice, subscribe } from "@/lib/cart";
-import { CartItem } from "@/lib/cart";
-import { getStoredUser } from "@/lib/auth";
+import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
+  const { items: cartItems, totalPrice: total, refreshCart } = useCart();
   const [loading, setLoading] = useState(false);
   
   const [address, setAddress] = useState({
@@ -24,24 +22,13 @@ export default function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState("credit-card");
 
-  const refreshCart = () => {
-    const items = getCart();
-    setCartItems([...items]);
-    setTotal(getTotalPrice());
-  };
-
   useEffect(() => {
-    const storedUser = getStoredUser();
-    if (!storedUser) {
+    if (!user) {
       router.push("/login");
       return;
     }
-    setUser(storedUser);
-    
     refreshCart();
-    const unsubscribe = subscribe(refreshCart);
-    return unsubscribe;
-  }, [router]);
+  }, [user, router, refreshCart]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +67,8 @@ export default function CheckoutPage() {
       }
 
       const data = await res.json();
+      // Clear cart after order
+      await refreshCart();
       router.push(`/order-confirmation/${data.id}`);
     } catch (error: any) {
       alert(error.message);
