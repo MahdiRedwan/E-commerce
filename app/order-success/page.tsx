@@ -1,10 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("session_id");
@@ -54,5 +55,13 @@ export default function OrderSuccessPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-7xl px-6 py-16 text-center"><p className="text-muted">Loading...</p></div>}>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }

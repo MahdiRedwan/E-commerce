@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import Stripe from 'stripe'
 
+export const dynamic = 'force-dynamic'
+
 const stripe = new Stripe(process.env.STRIPESECRETKEY!, {
   apiVersion: '2026-07-29.dahlia',
 })

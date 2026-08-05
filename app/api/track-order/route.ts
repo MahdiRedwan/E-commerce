@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/track-order?id=1&email=test@test.com
 export async function GET(request: Request) {
   try {
