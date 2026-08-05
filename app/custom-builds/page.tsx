@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getStoredUser } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 // Component types
 type PartType = 'cpu' | 'gpu' | 'ram' | 'storage' | 'psu' | 'case';
@@ -56,13 +56,16 @@ export default function CustomBuildsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const storedUser = getStoredUser();
-    if (!storedUser) {
-      router.push('/login');
-      return;
-    }
-    setUser(storedUser);
-    loadParts();
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push('/login');
+        return;
+      }
+      setUser(data.user);
+      loadParts();
+    };
+    checkUser();
   }, [router]);
 
   const loadParts = async () => {
