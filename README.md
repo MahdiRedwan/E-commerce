@@ -1,51 +1,63 @@
-# CircuitForge
+# CircuitForge — Full-Stack E-Commerce Platform
 
-A Next.js 14 (App Router + TypeScript + Tailwind) storefront scaffold for a PC
-hardware ecommerce site: top nav with category mega-menu, hero, a price-pledge
-ticker, and three main sections (PC Hardware, Custom Built PCs, AI & Deep PC
-Analysis), plus a newsletter/footer bottom section.
+## 🔗 Live Demo
+[https://e-commerce-tan-one-94.vercel.app](https://e-commerce-tan-one-94.vercel.app)
 
-## Run it
+## 📖 Overview
+CircuitForge is a full-featured PC hardware e-commerce platform built with Next.js, TypeScript, Supabase, and Stripe. It allows users to browse products, add to cart, checkout with Stripe, and track orders.
 
+## ✨ Key Features
+
+### User Features
+- Browse products by category and subcategory
+- Search products by name, slug, or category
+- Add to cart, update quantity, remove items
+- Secure checkout with Stripe payment
+- View order history and track orders
+- Leave product reviews and ratings
+
+### Authentication
+- User registration with email verification
+- Login with email/password
+- Password reset via email
+
+### Admin Features
+- Dashboard with stats (products, orders, pending)
+- Manage products (Create, Read, Update, Delete)
+- Manage orders (update status)
+- Manage categories (CRUD)
+
+### AI Tools (Demo)
+- **Bottleneck Analyzer** — identifies performance bottlenecks
+- **Compatibility Checker** — checks component compatibility
+- **Upgrade Planner** — suggests upgrades based on budget
+
+### Email Notifications
+- Order confirmation emails
+- Password reset emails
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 14, React, TypeScript, Tailwind CSS |
+| Backend | Next.js API Routes |
+| Database | Supabase (PostgreSQL) |
+| Auth | Supabase Auth + JWT |
+| Payments | Stripe |
+| Email | Resend |
+| Hosting | Vercel |
+
+## 🧪 Test Accounts
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@circuitforge.com | admin123 |
+| Customer | testlogin@example.com | test123 |
+
+## 🚀 Local Development
+
+1. Clone the repository:
 ```bash
-npm install
-npm run dev
-```
-
-Open http://localhost:3000.
-
-## Where things live
-
-- `app/layout.tsx` — root layout, loads fonts, wraps every page in Navbar + Footer
-- `app/page.tsx` — homepage, assembles Hero + all sections
-- `app/category/[slug]/page.tsx` — auto-generated page per category (add a
-  category in `lib/data.ts` and it's routable immediately)
-- `app/product/[slug]/page.tsx` — product detail page
-- `components/` — Navbar, CategoryMegaMenu, Hero, ProductCard, ProductGrid,
-  SectionHeader, PricePledgeTicker, CustomBuildCTA, AIInsights, Newsletter, Footer
-- `lib/data.ts` — categories + mock product catalogue (swap for a real API/CMS/DB later)
-- `lib/types.ts` — `Category` and `Product` shapes
-
-## Extending it
-
-- **New category**: add an entry to `categories` in `lib/data.ts`. It appears
-  in the Navbar mega-menu and gets a working `/category/[slug]` page for free.
-- **New product**: add an entry to `products` in `lib/data.ts`.
-- **Real data source**: replace the functions at the bottom of `lib/data.ts`
-  (`getCategory`, `getProductsByCategory`, `getProduct`, `getFeaturedProducts`)
-  with calls to your API/CMS/database — the components don't need to change.
-- **Cart/checkout/auth**: `/cart`, `/account` and `/build` are linked but not
-  yet built out — add routes under `app/` as needed.
-- **Real product photography**: swap the `image` field in `lib/data.ts`; if
-  you use a new image host, add its domain to `next.config.mjs` under
-  `images.remotePatterns`.
-
-## Design system
-
-Dark graphite/navy base with a copper "PCB trace" accent and a teal
-"in-stock" indicator. Space Grotesk for display type, Inter for body copy,
-JetBrains Mono for prices/specs/SKUs. The signature visual motif is the
-`chip-card` (a notched corner like a component package) and `trace-node` /
-`trace-rule` (a gold via-dot and line used above section headings) — both
-defined as utility classes in `app/globals.css` so they stay consistent
-everywhere.
+git clone https://github.com/MahdiRedwan/E-commerce.git
+cd E-commerce
