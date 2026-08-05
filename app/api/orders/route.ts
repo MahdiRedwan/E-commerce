@@ -64,6 +64,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     
+    console.log('🔍 Orders API - Looking for user ID:', body.userId)
+    
     if (!body.userId || !body.items || !body.total) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -77,6 +79,9 @@ export async function POST(request: Request) {
       .select('id, email')
       .eq('id', body.userId)
       .single()
+    
+    console.log('🔍 Orders API - User found:', user)
+    console.log('🔍 Orders API - User error:', userError)
     
     if (userError || !user) {
       return NextResponse.json(
