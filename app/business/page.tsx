@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getStoredUser } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export default function BusinessPage() {
   const router = useRouter();
@@ -12,7 +12,6 @@ export default function BusinessPage() {
   const [isBusinessUser, setIsBusinessUser] = useState(false);
   const [businessData, setBusinessData] = useState<any>(null);
 
-  // Business registration form
   const [form, setForm] = useState({
     companyName: "",
     taxId: "",
@@ -20,31 +19,37 @@ export default function BusinessPage() {
     address: "",
     phone: "",
     website: "",
-    businessType: "retail", // retail, wholesale, manufacturing, other
+    businessType: "retail",
     estimatedMonthlyOrder: "0-1000",
   });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const storedUser = getStoredUser();
-    if (!storedUser) {
-      router.push('/login');
-      return;
-    }
-    setUser(storedUser);
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+      
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      
+      setUser(user);
 
-    // Check if user already has a business account
-    fetch(`/api/business?userId=${storedUser.id}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.id) {
-          setIsBusinessUser(true);
-          setBusinessData(data);
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      fetch(`/api/business?userId=${user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.id) {
+            setIsBusinessUser(true);
+            setBusinessData(data);
+          }
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    };
+    
+    checkUser();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +91,6 @@ export default function BusinessPage() {
     );
   }
 
-  // Business dashboard view
   if (isBusinessUser && businessData) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-12">
@@ -157,7 +161,6 @@ export default function BusinessPage() {
     );
   }
 
-  // Registration form view
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="font-display text-3xl font-bold text-ink">Business Account</h1>
