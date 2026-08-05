@@ -37,9 +37,10 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // Sync user to users table
+        console.log('🟡 Syncing user:', data.user.id);
+        
         try {
-          await fetch('/api/users/sync', {
+          const response = await fetch('/api/users/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -49,8 +50,12 @@ export default function LoginPage() {
               role: 'customer'
             }),
           });
+          
+          console.log('🟢 Sync response status:', response.status);
+          const result = await response.json();
+          console.log('🟢 Sync result:', result);
         } catch (syncError) {
-          console.error('Sync error:', syncError);
+          console.error('🔴 Sync error:', syncError);
         }
         
         router.push("/");
