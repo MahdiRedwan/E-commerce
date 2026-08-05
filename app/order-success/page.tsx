@@ -22,6 +22,8 @@ function OrderSuccessContent() {
       .then((res) => res.json())
       .then((data) => {
         setOrderId(data.orderId);
+        // Clear the cart
+        localStorage.removeItem('cart_items');
         setLoading(false);
       })
       .catch(() => setLoading(false));
