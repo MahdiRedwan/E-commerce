@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useCart } from "@/context/CartContext";
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
@@ -11,6 +12,7 @@ function OrderSuccessContent() {
   const sessionId = searchParams.get("session_id");
   const [loading, setLoading] = useState(true);
   const [orderId, setOrderId] = useState("");
+  const { clearCart } = useCart();
 
   useEffect(() => {
     if (!sessionId) {
@@ -22,12 +24,11 @@ function OrderSuccessContent() {
       .then((res) => res.json())
       .then((data) => {
         setOrderId(data.orderId);
-        // Clear the cart
-        localStorage.removeItem('cart_items');
+        clearCart();
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [sessionId, router]);
+  }, [sessionId, router, clearCart]);
 
   if (loading) {
     return (
