@@ -33,6 +33,11 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user) {
+      alert("Please login to place an order");
+      return;
+    }
+
     if (cartItems.length === 0) {
       alert("Your cart is empty!");
       return;
