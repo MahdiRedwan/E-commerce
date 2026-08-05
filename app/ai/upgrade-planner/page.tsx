@@ -82,7 +82,7 @@ export default function UpgradePlannerPage() {
 
       <h1 className="font-display text-3xl font-bold text-ink">Upgrade Path Planner</h1>
       <p className="text-muted mt-2">
-        Tell us your budget and use case, and we'll recommend the best upgrades.
+        Tell us your budget and use case, and we&apos;ll recommend the best upgrades.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
