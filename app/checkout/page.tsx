@@ -53,6 +53,8 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      console.log('🔍 User ID from Auth:', user.id);
+      
       const order = {
         userId: user.id,
         items: cartItems.map(item => ({
