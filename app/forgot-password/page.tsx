@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `https://e-commerce-tan-one-94.vercel.app/reset-password`,
       });
 
       if (error) {
