@@ -14,7 +14,7 @@ interface CartContextType {
   items: CartItem[];
   totalItems: number;
   totalPrice: number;
-  addToCart: (productId: string, quantity?: number) => Promise<void>;
+  addToCart: (productId: string, quantity?: number, customBuild?: any) => Promise<void>;
   removeFromCart: (productId: string) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -131,7 +131,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     refreshCart();
   }, [user]);
 
-  const addToCart = async (productId: string, quantity: number = 1) => {
+  const addToCart = async (productId: string, quantity: number = 1, customBuild?: any) => {
     if (!user) {
       alert('Please login to add items to cart');
       return;
@@ -143,26 +143,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (existing) {
       existing.quantity += quantity;
     } else {
-      try {
-        const { data: productData, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', productId)
-          .single();
-
-        if (error || !productData) {
-          console.error('Product not found:', error);
-          return;
-        }
-
+      // Handle custom build
+      if (customBuild) {
         currentItems.push({
           productId,
           quantity,
-          product: productData
+          product: {
+            id: productId,
+            name: customBuild.buildName || 'Custom Build',
+            price: customBuild.total || 0,
+            image: 'https://placehold.co/600x600/121722/E3A24C?text=Custom+Build',
+            slug: productId,
+            specs: customBuild.parts || [],
+            in_stock: true,
+          }
         });
-      } catch (error) {
-        console.error('Failed to fetch product:', error);
-        return;
+      } else {
+        try {
+          const { data: productData, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', productId)
+            .single();
+
+          if (error || !productData) {
+            console.error('Product not found:', error);
+            return;
+          }
+
+          currentItems.push({
+            productId,
+            quantity,
+            product: productData
+          });
+        } catch (error) {
+          console.error('Failed to fetch product:', error);
+          return;
+        }
       }
     }
 

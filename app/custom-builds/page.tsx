@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useCart } from "@/context/CartContext";
 
 // Component types
 type PartType = 'cpu' | 'gpu' | 'ram' | 'storage' | 'psu' | 'case';
@@ -34,6 +35,7 @@ const steps: BuildStep[] = [
 
 export default function CustomBuildsPage() {
   const router = useRouter();
+  const { addToCart } = useCart();
   const [user, setUser] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [build, setBuild] = useState<Record<PartType, Part | null>>({
@@ -153,7 +155,7 @@ export default function CustomBuildsPage() {
     return 'pending';
   };
 
-  const addToCart = async () => {
+  const addToCartHandler = async () => {
     const parts = Object.values(build).filter(p => p !== null);
     if (parts.length < 6) {
       alert('Please select all parts before adding to cart');
@@ -163,35 +165,19 @@ export default function CustomBuildsPage() {
     setSaving(true);
     const total = getTotalPrice();
 
-    // Create a custom product name from selected parts
     const cpu = build.cpu?.name || 'CPU';
     const gpu = build.gpu?.name || 'GPU';
     const buildName = `Custom Build: ${cpu} + ${gpu}`;
 
     try {
-      // Add to cart as a single item
-      const res = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId: `custom-${Date.now()}`,
-          quantity: 1,
-          customBuild: true,
-          buildName: buildName,
-          parts: parts,
-          total: total,
-        }),
+      await addToCart(`custom-${Date.now()}`, 1, {
+        buildName: buildName,
+        parts: parts,
+        total: total,
       });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        alert(`Custom build added to cart! Total: ৳${total}`);
-        // Force cart refresh
-        window.location.href = '/cart';
-      } else {
-        alert(data.error || 'Failed to add build to cart');
-      }
+      
+      alert(`Custom build added to cart! Total: ৳${total}`);
+      window.location.href = '/cart';
     } catch (error) {
       alert('Error adding build to cart');
     } finally {
@@ -296,7 +282,7 @@ export default function CustomBuildsPage() {
         <div>
           {currentStep === steps.length - 1 ? (
             <button
-              onClick={addToCart}
+              onClick={addToCartHandler}
               disabled={saving}
               className="bg-trace px-6 py-3 text-base font-semibold hover:opacity-80 disabled:opacity-50"
             >
