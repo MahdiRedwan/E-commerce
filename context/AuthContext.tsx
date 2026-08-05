@@ -1,22 +1,15 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { getStoredUser, setStoredUser, clearStoredUser } from "@/lib/auth";
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  createdAt: string;
-}
+import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (user: User, token: string) => void;
-  logout: () => void;
-  refreshUser: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,27 +18,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshUser = () => {
-    const storedUser = getStoredUser();
-    if (storedUser) {
-      setUser(storedUser);
-    } else {
-      setUser(null);
-    }
+  const refreshUser = async () => {
+    const { data } = await supabase.auth.getUser();
+    setUser(data.user);
     setLoading(false);
   };
 
   useEffect(() => {
     refreshUser();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      setLoading(false);
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
   }, []);
 
-  const login = (userData: User, token: string) => {
-    setStoredUser(userData);
-    setUser(userData);
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   };
 
-  const logout = () => {
-    clearStoredUser();
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
