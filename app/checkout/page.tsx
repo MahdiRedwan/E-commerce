@@ -33,6 +33,13 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🟡 Submit triggered');
+    console.log('User:', user);
+    console.log('Cart items:', cartItems);
+    console.log('Total:', total);
+    console.log('Address:', address);
+    console.log('Payment method:', paymentMethod);
+    
     if (!user) {
       alert("Please login to place an order");
       return;
@@ -61,21 +68,28 @@ export default function CheckoutPage() {
         createdAt: new Date().toISOString()
       };
 
+      console.log('📦 Sending order:', JSON.stringify(order, null, 2));
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(order),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to place order");
-      }
+      console.log('📥 Response status:', res.status);
+      console.log('📥 Response ok:', res.ok);
 
       const data = await res.json();
-      // Clear cart after order
+      console.log('📥 Response data:', data);
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to place order");
+      }
+
       await refreshCart();
       router.push(`/order-confirmation/${data.id}`);
     } catch (error: any) {
+      console.error('❌ Error:', error);
       alert(error.message);
     } finally {
       setLoading(false);
