@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getProduct } from "@/lib/data";
 import { useCart } from "@/context/CartContext";
 import { Product } from "@/lib/types";
@@ -60,10 +61,12 @@ export default function ProductPage({ params }: Props) {
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         {/* Image */}
         <div className="relative aspect-square border border-line bg-surface">
-          <img
+          <Image
             src={product.image}
             alt={product.name}
-            className="h-full w-full object-contain p-4"
+            fill
+            className="object-contain p-4"
+            unoptimized
           />
         </div>
 
