@@ -17,7 +17,6 @@ export default function CompatibilityCheckerPage() {
     setTimeout(() => {
       const issues = [];
       
-      // Simulate compatibility checks
       if (cpu.includes("Intel") && motherboard.includes("AMD")) {
         issues.push("❌ CPU and motherboard are incompatible (Intel CPU with AMD socket)");
       }
@@ -117,10 +116,20 @@ export default function CompatibilityCheckerPage() {
         <div className={`mt-8 border p-6 ${
           result.status === "Compatible" ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"
         }`}>
-          <h2 className="font-display text-xl font-bold text-ink">Result: {result.status}</h2>
+          <h2 className={`font-display text-xl font-bold ${
+            result.status === "Compatible" ? "text-green-700" : "text-red-700"
+          }`}>
+            Result: {result.status}
+          </h2>
           <ul className="mt-4 space-y-2">
             {result.issues.map((issue: string, i: number) => (
-              <li key={i} className="text-sm text-ink">{issue}</li>
+              <li key={i} className={`text-sm ${
+                issue.includes("❌") ? "text-red-700" : 
+                issue.includes("⚠️") ? "text-yellow-700" : 
+                "text-green-700"
+              }`}>
+                {issue}
+              </li>
             ))}
           </ul>
         </div>
