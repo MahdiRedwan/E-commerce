@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { sendOrderConfirmation } from '@/lib/email'
 
 export interface Order {
   id: string
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
     // Verify user exists
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id')
+      .select('id, email')
       .eq('id', body.userId)
       .single()
     
@@ -107,6 +108,15 @@ export async function POST(request: Request) {
         { error: 'Failed to create order' },
         { status: 500 }
       )
+    }
+    
+    // Send confirmation email
+    try {
+      await sendOrderConfirmation(data, user.email);
+      console.log('Confirmation email sent to:', user.email);
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Don't fail the order if email fails
     }
     
     return NextResponse.json(data, { status: 201 })
