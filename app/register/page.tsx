@@ -43,6 +43,24 @@ export default function RegisterPage() {
         throw new Error(error.message);
       }
 
+      // Save user to your users table
+      if (data.user) {
+        try {
+          await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: data.user.id,
+              email: data.user.email,
+              name: name,
+              role: 'customer'
+            }),
+          });
+        } catch (saveError) {
+          console.error('Failed to save user:', saveError);
+        }
+      }
+
       setSuccess(true);
       setTimeout(() => {
         router.push("/login");
@@ -59,7 +77,7 @@ export default function RegisterPage() {
       <div className="mx-auto max-w-md px-6 py-16 text-center">
         <h1 className="font-display text-3xl font-bold text-green-600">✅ Registration Successful!</h1>
         <p className="mt-4 text-muted">
-          Please check your email to confirm your account.
+          Your account has been created! You can now login.
         </p>
         <Link
           href="/login"
