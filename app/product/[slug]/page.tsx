@@ -17,6 +17,12 @@ export default function ProductPage({ params }: Props) {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const { addToCart: addToCartContext } = useCart();
+  
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(true);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState("");
 
   useEffect(() => {
     getProduct(params.slug).then((data) => {
@@ -27,10 +33,64 @@ export default function ProductPage({ params }: Props) {
     });
   }, [params.slug]);
 
+  // Fetch reviews
+  useEffect(() => {
+    if (product?.id) {
+      fetch(`/api/reviews?productId=${product.id}`)
+        .then(res => res.json())
+        .then(data => {
+          setReviews(data);
+          setReviewLoading(false);
+        })
+        .catch(() => setReviewLoading(false));
+    }
+  }, [product?.id]);
+
   const handleAddToCart = () => {
     if (product) {
       addToCartContext(product.id, quantity);
       alert(`Added ${quantity} x ${product.name} to cart!`);
+    }
+  };
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setReviewError("");
+
+    try {
+      const user = JSON.parse(localStorage.getItem("auth_user") || "null");
+      if (!user) {
+        setReviewError("Please login to leave a review");
+        setSubmitting(false);
+        return;
+      }
+
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product?.id,
+          userId: user.id,
+          userName: user.name || user.email,
+          rating: newReview.rating,
+          comment: newReview.comment,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit review");
+      }
+
+      setReviews([data, ...reviews]);
+      setNewReview({ rating: 5, comment: "" });
+      alert("Review submitted successfully!");
+    } catch (error: any) {
+      setReviewError(error.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -140,6 +200,79 @@ export default function ProductPage({ params }: Props) {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="mt-8 border-t border-line pt-8">
+        <h2 className="font-display text-2xl font-bold text-ink">Reviews</h2>
+        
+        {reviewLoading ? (
+          <p className="text-muted mt-4">Loading reviews...</p>
+        ) : (
+          <>
+            {/* Review Form */}
+            <form onSubmit={submitReview} className="mt-4 border border-line bg-surface p-4">
+              <h3 className="font-medium text-ink">Leave a Review</h3>
+              
+              {reviewError && (
+                <div className="mt-2 border border-red-500 bg-red-50 p-2 text-sm text-red-600">
+                  {reviewError}
+                </div>
+              )}
+              
+              <div className="mt-3 flex items-center gap-4">
+                <label className="text-sm text-muted">Rating:</label>
+                <select
+                  value={newReview.rating}
+                  onChange={(e) => setNewReview({ ...newReview, rating: parseInt(e.target.value) })}
+                  className="border border-line bg-base px-3 py-1 text-ink"
+                >
+                  {[5,4,3,2,1].map((num) => (
+                    <option key={num} value={num}>{num} ⭐</option>
+                  ))}
+                </select>
+              </div>
+              
+              <textarea
+                value={newReview.comment}
+                onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                placeholder="Write your review..."
+                className="mt-3 w-full border border-line bg-base px-4 py-2 text-ink focus:border-trace"
+                rows={3}
+              />
+              
+              <button
+                type="submit"
+                disabled={submitting}
+                className="mt-3 bg-trace px-6 py-2 text-sm font-semibold hover:opacity-80 disabled:opacity-50"
+              >
+                {submitting ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
+
+            {/* Reviews List */}
+            <div className="mt-4 space-y-4">
+              {reviews.length === 0 ? (
+                <p className="text-muted">No reviews yet. Be the first!</p>
+              ) : (
+                reviews.map((review) => (
+                  <div key={review.id} className="border-b border-line py-4">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-ink">{review.user_name}</span>
+                      <span className="text-sm text-trace">⭐ {review.rating}</span>
+                      <span className="text-xs text-muted">
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {review.comment && (
+                      <p className="mt-2 text-sm text-muted">{review.comment}</p>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
