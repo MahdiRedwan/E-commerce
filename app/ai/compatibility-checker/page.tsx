@@ -120,7 +120,7 @@ export default function CompatibilityCheckerPage() {
           <h2 className="font-display text-xl font-bold text-ink">Result: {result.status}</h2>
           <ul className="mt-4 space-y-2">
             {result.issues.map((issue: string, i: number) => (
-              <li key={i} className="text-sm">{issue}</li>
+              <li key={i} className="text-sm text-ink">{issue}</li>
             ))}
           </ul>
         </div>
