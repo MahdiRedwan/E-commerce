@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getProduct } from "@/lib/data";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { Product } from "@/lib/types";
 
 interface Props {
@@ -17,6 +18,7 @@ export default function ProductPage({ params }: Props) {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const { addToCart: addToCartContext } = useCart();
+  const { user } = useAuth();
   
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewLoading, setReviewLoading] = useState(true);
@@ -59,7 +61,6 @@ export default function ProductPage({ params }: Props) {
     setReviewError("");
 
     try {
-      const user = JSON.parse(localStorage.getItem("auth_user") || "null");
       if (!user) {
         setReviewError("Please login to leave a review");
         setSubmitting(false);
@@ -72,7 +73,7 @@ export default function ProductPage({ params }: Props) {
         body: JSON.stringify({
           productId: product?.id,
           userId: user.id,
-          userName: user.name || user.email,
+          userName: user.user_metadata?.name || user.email || "User",
           rating: newReview.rating,
           comment: newReview.comment,
         }),
