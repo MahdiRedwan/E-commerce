@@ -100,7 +100,7 @@ export default function AdminPage() {
               <div>
                 <p className="font-medium text-ink">Order #{order.id}</p>
                 <p className="text-sm text-muted">
-                  {new Date(order.createdAt || order.created_at).toLocaleDateString()}
+                  {new Date(order.created_at || order.createdAt).toLocaleDateString()}
                 </p>
               </div>
               <div className="text-right">
