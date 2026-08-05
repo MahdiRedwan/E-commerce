@@ -42,7 +42,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('carts')
-        .select('items')
+        .select('*')
         .eq('user_id', user.id)
         .single();
 
@@ -57,7 +57,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (!data) {
         const { error: insertError } = await supabase
           .from('carts')
-          .insert({ user_id: user.id, items: [] });
+          .insert({
+            user_id: user.id,
+            items: [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
 
         if (insertError) {
           console.error('Error creating cart:', insertError);
@@ -81,15 +86,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      // First check if cart exists
+      const { data: existing } = await supabase
         .from('carts')
-        .upsert({
-          user_id: user.id,
-          items: cartItems,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      let error;
+
+      if (existing) {
+        // Update existing cart
+        const { error: updateError } = await supabase
+          .from('carts')
+          .update({
+            items: cartItems,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+        error = updateError;
+      } else {
+        // Insert new cart
+        const { error: insertError } = await supabase
+          .from('carts')
+          .insert({
+            user_id: user.id,
+            items: cartItems,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        error = insertError;
+      }
 
       if (error) {
         console.error('Error saving cart:', error);
