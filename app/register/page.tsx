@@ -45,19 +45,19 @@ export default function RegisterPage() {
 
       // Save user to your users table
       if (data.user) {
-        try {
-          await fetch('/api/users', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: data.user.id,
-              email: data.user.email,
-              name: name,
-              role: 'customer'
-            }),
-          });
-        } catch (saveError) {
-          console.error('Failed to save user:', saveError);
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: data.user.id,
+            email: data.user.email,
+            name: name,
+            role: 'customer'
+          }),
+        });
+
+        if (!response.ok) {
+          console.error('Failed to save user to users table');
         }
       }
 
