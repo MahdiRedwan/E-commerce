@@ -31,12 +31,13 @@ export async function POST(request: Request) {
         console.log('🔍 Updating orders from:', existingUser.id, 'to:', body.id)
         
         // Update orders to the new ID
-        const { error: ordersError } = await supabase
+        const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
           .update({ user_id: body.id })
           .eq('user_id', existingUser.id)
+          .select()
         
-        console.log('🔍 Orders update result:', ordersError)
+        console.log('🔍 Orders updated:', ordersData, ordersError)
         
         // Update the user ID
         const { error: updateError } = await supabase
