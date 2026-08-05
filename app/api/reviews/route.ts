@@ -40,6 +40,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+    console.log('🔍 Review POST body:', body)
+
     const { productId, userId, userName, rating, comment } = body
 
     if (!productId || !userId || !userName || !rating) {
@@ -84,9 +86,9 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      console.error('Supabase error:', error)
+      console.error('Supabase error:', JSON.stringify(error, null, 2))
       return NextResponse.json(
-        { error: 'Failed to create review' },
+        { error: error.message || 'Failed to create review' },
         { status: 500 }
       )
     }
