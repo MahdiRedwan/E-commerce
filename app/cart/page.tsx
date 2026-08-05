@@ -5,8 +5,16 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 
 export default function CartPage() {
-  const { items, totalItems, totalPrice, removeFromCart, updateQuantity } = useCart();
+  const { items, totalItems, totalPrice, removeFromCart, updateQuantity, loading } = useCart();
   const { user } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-6 py-16 text-center">
+        <p className="text-muted">Loading your cart...</p>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

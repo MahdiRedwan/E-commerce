@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { mapProduct } from '@/lib/mapData';
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "./AuthContext";
 
 interface CartItem {
   productId: string;
@@ -14,43 +14,103 @@ interface CartContextType {
   items: CartItem[];
   totalItems: number;
   totalPrice: number;
-  addToCart: (productId: string, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
-  refreshCart: () => void;
+  addToCart: (productId: string, quantity?: number) => Promise<void>;
+  removeFromCart: (productId: string) => Promise<void>;
+  updateQuantity: (productId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  refreshCart: () => Promise<void>;
+  loading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-function loadCart(): CartItem[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const data = localStorage.getItem("cart_items");
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveCart(items: CartItem[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("cart_items", JSON.stringify(items));
-}
-
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  const refreshCart = () => {
-    setItems(loadCart());
+  // Load cart from Supabase
+  const refreshCart = async () => {
+    setLoading(true);
+    
+    if (!user) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('carts')
+        .select('items')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading cart:', error);
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+
+      // If no cart exists, create one
+      if (!data) {
+        const { error: insertError } = await supabase
+          .from('carts')
+          .insert({ user_id: user.id, items: [] });
+
+        if (insertError) {
+          console.error('Error creating cart:', insertError);
+        }
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+
+      setItems(data.items || []);
+    } catch (error) {
+      console.error('Error loading cart:', error);
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Save cart to Supabase
+  const saveCart = async (cartItems: CartItem[]) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('carts')
+        .upsert({
+          user_id: user.id,
+          items: cartItems,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving cart:', error);
+      }
+    } catch (error) {
+      console.error('Error saving cart:', error);
+    }
+  };
+
+  // Load cart when user changes
   useEffect(() => {
     refreshCart();
-  }, []);
+  }, [user]);
 
   const addToCart = async (productId: string, quantity: number = 1) => {
-    const currentItems = loadCart();
+    if (!user) {
+      alert('Please login to add items to cart');
+      return;
+    }
+
+    const currentItems = [...items];
     const existing = currentItems.find((item) => item.productId === productId);
 
     if (existing) {
@@ -68,38 +128,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const product = mapProduct(productData);
-        currentItems.push({ productId, quantity, product });
+        currentItems.push({
+          productId,
+          quantity,
+          product: productData
+        });
       } catch (error) {
-        console.error("Failed to fetch product:", error);
+        console.error('Failed to fetch product:', error);
         return;
       }
     }
 
-    saveCart(currentItems);
     setItems(currentItems);
+    await saveCart(currentItems);
   };
 
-  const removeFromCart = (productId: string) => {
-    const currentItems = loadCart().filter((item) => item.productId !== productId);
-    saveCart(currentItems);
+  const removeFromCart = async (productId: string) => {
+    const currentItems = items.filter((item) => item.productId !== productId);
     setItems(currentItems);
+    await saveCart(currentItems);
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = async (productId: string, quantity: number) => {
     if (quantity < 1) return;
-    const currentItems = loadCart();
+    const currentItems = [...items];
     const item = currentItems.find((i) => i.productId === productId);
     if (item) {
       item.quantity = quantity;
-      saveCart(currentItems);
       setItems(currentItems);
+      await saveCart(currentItems);
     }
   };
 
-  const clearCart = () => {
-    saveCart([]);
+  const clearCart = async () => {
     setItems([]);
+    await saveCart([]);
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -119,6 +182,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateQuantity,
         clearCart,
         refreshCart,
+        loading,
       }}
     >
       {children}
