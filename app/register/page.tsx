@@ -3,16 +3,18 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -26,38 +28,48 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+            role: "customer",
+          },
+        },
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Registration failed");
+      if (error) {
+        throw new Error(error.message);
       }
 
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const loginData = await loginRes.json();
-
-      if (loginRes.ok) {
-        login(loginData.user, loginData.token);
-        router.push("/");
-      } else {
+      setSuccess(true);
+      setTimeout(() => {
         router.push("/login");
-      }
+      }, 3000);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="mx-auto max-w-md px-6 py-16 text-center">
+        <h1 className="font-display text-3xl font-bold text-green-600">✅ Registration Successful!</h1>
+        <p className="mt-4 text-muted">
+          Please check your email to confirm your account.
+        </p>
+        <Link
+          href="/login"
+          className="mt-6 inline-block bg-trace px-6 py-3 text-base font-semibold hover:opacity-80"
+        >
+          Go to Login
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-md px-6 py-16">
