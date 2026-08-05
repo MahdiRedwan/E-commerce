@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/context/CartContext";
 
-// Component types
 type PartType = 'cpu' | 'gpu' | 'ram' | 'storage' | 'psu' | 'case';
 
 interface Part {
@@ -72,11 +71,6 @@ export default function CustomBuildsPage() {
 
   const loadParts = async () => {
     try {
-      const res = await fetch('/api/products');
-      const products = await res.json();
-
-      // For now, use placeholder data since we need real parts
-      // In production, you'd have proper categories
       const cpuParts: Part[] = [
         { id: 'cpu1', name: 'Intel Core i9-14900K', price: 589.99, type: 'cpu', specs: { cores: '24', baseClock: '3.2GHz' }, image: 'https://placehold.co/100x100/121722/E3A24C?text=CPU' },
         { id: 'cpu2', name: 'AMD Ryzen 9 7950X', price: 549.99, type: 'cpu', specs: { cores: '16', baseClock: '4.5GHz' }, image: 'https://placehold.co/100x100/121722/E3A24C?text=CPU' },
@@ -130,7 +124,6 @@ export default function CustomBuildsPage() {
 
   const selectPart = (type: PartType, part: Part) => {
     setBuild({ ...build, [type]: part });
-    // Auto-advance to next step
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
@@ -201,7 +194,6 @@ export default function CustomBuildsPage() {
       <h1 className="font-display text-3xl font-bold text-ink">Custom Build Wizard</h1>
       <p className="text-muted mt-2">Build your dream PC, part by part</p>
 
-      {/* Progress Steps */}
       <div className="mt-8">
         <div className="flex justify-between">
           {steps.map((step, index) => {
@@ -234,7 +226,6 @@ export default function CustomBuildsPage() {
         </div>
       </div>
 
-      {/* Step Content */}
       <div className="mt-12">
         <h2 className="font-display text-2xl font-bold text-ink">{currentStepData?.label}</h2>
         <p className="text-muted">{currentStepData?.description}</p>
@@ -268,7 +259,6 @@ export default function CustomBuildsPage() {
         )}
       </div>
 
-      {/* Navigation */}
       <div className="mt-8 flex justify-between items-center">
         <div>
           <button

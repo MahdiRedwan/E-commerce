@@ -29,7 +29,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  // Load cart from Supabase
   const refreshCart = async () => {
     setLoading(true);
     
@@ -53,7 +52,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // If no cart exists, create one
       if (!data) {
         const { error: insertError } = await supabase
           .from('carts')
@@ -81,12 +79,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Save cart to Supabase
   const saveCart = async (cartItems: CartItem[]) => {
     if (!user) return;
 
+    console.log('🔍 Saving cart:', cartItems);
+
     try {
-      // First check if cart exists
       const { data: existing } = await supabase
         .from('carts')
         .select('id')
@@ -96,7 +94,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       let error;
 
       if (existing) {
-        // Update existing cart
         const { error: updateError } = await supabase
           .from('carts')
           .update({
@@ -106,7 +103,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
           .eq('user_id', user.id);
         error = updateError;
       } else {
-        // Insert new cart
         const { error: insertError } = await supabase
           .from('carts')
           .insert({
@@ -120,18 +116,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Error saving cart:', error);
+      } else {
+        console.log('✅ Cart saved successfully');
       }
     } catch (error) {
       console.error('Error saving cart:', error);
     }
   };
 
-  // Load cart when user changes
   useEffect(() => {
     refreshCart();
   }, [user]);
 
   const addToCart = async (productId: string, quantity: number = 1, customBuild?: any) => {
+    console.log('🔍 addToCart called:', { productId, quantity, customBuild });
+    console.log('🔍 Current items before:', items);
+
     if (!user) {
       alert('Please login to add items to cart');
       return;
@@ -143,8 +143,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (existing) {
       existing.quantity += quantity;
     } else {
-      // Handle custom build
       if (customBuild) {
+        console.log('🛠️ Adding custom build:', customBuild);
         currentItems.push({
           productId,
           quantity,
@@ -183,6 +183,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    console.log('🔍 Items after update:', currentItems);
     setItems(currentItems);
     await saveCart(currentItems);
   };
