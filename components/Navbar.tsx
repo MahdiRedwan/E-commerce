@@ -11,8 +11,8 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { totalItems, totalPrice } = useCart();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     window.location.href = "/";
   };
 
@@ -83,8 +83,10 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-3 text-sm">
               <Link href="/account" className="text-muted hover:text-trace">Welcome,</Link>
-              <Link href="/account" className="font-medium hover:text-trace">{user.name}</Link>
-              {user.role === "admin" && (
+              <Link href="/account" className="font-medium hover:text-trace">
+                {user.user_metadata?.name || user.email || 'User'}
+              </Link>
+              {user.user_metadata?.role === "admin" && (
                 <Link href="/admin" className="text-xs text-trace hover:underline">
                   Admin
                 </Link>
