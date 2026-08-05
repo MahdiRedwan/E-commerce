@@ -37,6 +37,22 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        // Sync user to users table
+        try {
+          await fetch('/api/users/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.user_metadata?.name || data.user.email,
+              role: 'customer'
+            }),
+          });
+        } catch (syncError) {
+          console.error('Sync error:', syncError);
+        }
+        
         router.push("/");
         window.location.reload();
       }
