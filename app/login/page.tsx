@@ -3,21 +3,23 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      router.push("/");
-    }
-  }, [user, router]);
+    // Check if already logged in
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        router.push("/");
+      }
+    });
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,20 +27,19 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+      if (error) {
+        throw new Error(error.message);
       }
 
-      login(data.user, data.token);
-      router.push("/");
+      if (data.user) {
+        router.push("/");
+        window.location.reload();
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
