@@ -27,11 +27,13 @@ export async function POST(request: Request) {
       .insert({
         id: body.id,
         email: body.email,
+        password: 'supabase_auth',
         name: body.name || body.email,
         role: body.role || 'customer'
       })
 
     if (error) {
+      console.error('Supabase insert error:', error)
       return NextResponse.json(
         { error: 'Failed to create user' },
         { status: 500 }
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    console.error('Sync error:', error)
     return NextResponse.json(
       { error: 'Failed to sync user' },
       { status: 500 }
