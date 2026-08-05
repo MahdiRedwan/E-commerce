@@ -33,13 +33,6 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🟡 Submit triggered');
-    console.log('User:', user);
-    console.log('Cart items:', cartItems);
-    console.log('Total:', total);
-    console.log('Address:', address);
-    console.log('Payment method:', paymentMethod);
-    
     if (!user) {
       alert("Please login to place an order");
       return;
@@ -53,43 +46,27 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
-      console.log('🔍 User ID from Auth:', user.id);
-      
-      const order = {
-        userId: user.id,
-        items: cartItems.map(item => ({
-          productId: item.productId,
-          name: item.product.name,
-          price: item.product.price,
-          quantity: item.quantity
-        })),
-        total: total,
-        shippingAddress: address,
-        paymentMethod: paymentMethod,
-        status: "pending",
-        createdAt: new Date().toISOString()
-      };
-
-      console.log('📦 Sending order:', JSON.stringify(order, null, 2));
-
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(order),
+      const response = await fetch('/api/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cartItems.map(item => ({
+            name: item.product.name,
+            price: item.product.price,
+            quantity: item.quantity
+          })),
+          shippingAddress: address,
+          email: user.email,
+        }),
       });
 
-      console.log('📥 Response status:', res.status);
-      console.log('📥 Response ok:', res.ok);
+      const data = await response.json();
 
-      const data = await res.json();
-      console.log('📥 Response data:', data);
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to place order");
+      if (!response.ok) {
+        throw new Error(data.error || 'Payment failed');
       }
 
-      await refreshCart();
-      router.push(`/order-confirmation/${data.id}`);
+      window.location.href = data.url;
     } catch (error: any) {
       console.error('❌ Error:', error);
       alert(error.message);
