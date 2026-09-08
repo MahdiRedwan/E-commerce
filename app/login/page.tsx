@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { setToken, setStoredUser } from "@/lib/auth"; // ← ADD THIS
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,7 +14,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check if already logged in
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         router.push("/");
@@ -37,8 +37,22 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        console.log('🟡 Syncing user:', data.user.id);
+        console.log('🟡 User logged in:', data.user.id);
         
+        // ✅ SAVE USER TO LOCALSTORAGE
+        const token = data.session?.access_token;
+        if (token) {
+          setToken(token);
+          setStoredUser({
+            id: data.user.id,
+            email: data.user.email || '',
+            name: data.user.user_metadata?.name || data.user.email || '',
+            role: data.user.user_metadata?.role || 'customer',
+            createdAt: data.user.created_at || new Date().toISOString()
+          });
+        }
+        
+        // Sync with database
         try {
           const response = await fetch('/api/users/sync', {
             method: 'POST',
@@ -47,7 +61,7 @@ export default function LoginPage() {
               id: data.user.id,
               email: data.user.email,
               name: data.user.user_metadata?.name || data.user.email,
-              role: 'customer'
+              role: data.user.user_metadata?.role || 'customer'
             }),
           });
           
@@ -59,7 +73,7 @@ export default function LoginPage() {
         }
         
         router.push("/");
-        window.location.reload();
+        // Remove window.location.reload()
       }
     } catch (err: any) {
       setError(err.message);
