@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { sendOrderConfirmation } from '@/lib/email'
 import Stripe from 'stripe'
 
 export const dynamic = 'force-dynamic'
@@ -59,6 +60,16 @@ export async function GET(request: Request) {
         { error: 'Failed to create order', details: error.message, code: error.code, hint: error.hint },
         { status: 500 }
       )
+    }
+
+    // Send confirmation email
+    try {
+      if (session.customer_email) {
+        await sendOrderConfirmation(data, session.customer_email)
+        console.log('Confirmation email sent to:', session.customer_email)
+      }
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError)
     }
 
     return NextResponse.json({ orderId: data.id })
