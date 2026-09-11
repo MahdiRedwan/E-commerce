@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPESECRETKEY!, {
 
 export async function POST(request: Request) {
   try {
-    const { items, shippingAddress, email } = await request.json()
+    const { items, shippingAddress, email, userId } = await request.json()
 
     const lineItems = items.map((item: any) => ({
       price_data: {
@@ -28,11 +28,13 @@ export async function POST(request: Request) {
       success_url: `https://e-commerce-tan-one-94.vercel.app/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `https://e-commerce-tan-one-94.vercel.app/cart`,
       customer_email: email,
+      client_reference_id: userId || null,
       shipping_address_collection: {
         allowed_countries: ['US', 'GB', 'CA', 'AU', 'BD'],
       },
       metadata: {
         shippingAddress: JSON.stringify(shippingAddress),
+        items: JSON.stringify(items),
       },
     })
 
