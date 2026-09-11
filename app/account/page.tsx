@@ -126,7 +126,7 @@ export default function AccountPage() {
                       <div>
                         <p className="font-medium text-ink">Order #{order.id}</p>
                         <p className="text-sm text-muted">
-                          {new Date(order.createdAt).toLocaleDateString()}
+                          {new Date(order.created_at || order.createdAt).toLocaleDateString()}
                         </p>
                         <p className="text-sm text-muted">{order.items.length} items</p>
                       </div>
